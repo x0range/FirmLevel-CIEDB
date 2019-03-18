@@ -20,7 +20,8 @@ fun_data_clean <- function(data_c){
            FIAS = replace(FIAS, TOAS == -1, NA),
            TOAS = replace(TOAS, TOAS == -1, NA),
            Wages = replace(Wages, Wages < 0, NA),
-           Sales = replace(Sales, Sales < 0, NA)) %>%
+           Sales = replace(Sales, Sales < 0, NA),
+           Sales = replace(Intermediate.Input, Intermediate.Input < 0, NA)) %>%
             
     
     arrange(ID, Year) %>% # arranging data by firm and year
@@ -41,20 +42,21 @@ fun_data_clean <- function(data_c){
            def_Deprecation = as.numeric(Deprecation) / PPI,  # depreciation
            def_TOAS = as.numeric(TOAS) / PPI,  # assets
            def_FIAS = as.numeric(FIAS) / PPI,
-           def_Sales = as.numeric(Sales) / PPI   #sales
+           def_Sales = as.numeric(Sales) / PPI,   #sales
+           def_Intermediate.Input = as.numeric(Intermediate.Input) / PPI   #Intermediate.Input
     ) #%>%
    
   print("Part A")
   data_c <- data_c %>%
 
     mutate(VA = as.numeric(EBTA.Gross.Profit) + as.numeric(Wages), #Imputed Value added (EBTA is earning before depreciation)
-           VA_AD = as.numeric(EBTA.Operating.Profit) + as.numeric(Wages), #Imputed Value added (EBTA is earning before depreciation)
+           VA_AD = as.numeric(EBTA.Operating.Profit) + as.numeric(Wages), #Imputed Value added (after depreciation, taxes etc)
            
            LP= as.numeric(VA)/as.numeric(Employment), # Labor productivity
            CP = as.numeric(VA)/(as.numeric(FIAS)+as.numeric(Deprecation)), # capital productivity with fixed asset
            
-           LP_AD= as.numeric(VA_AD)/as.numeric(Employment), # Labor productivity after depreciation
-           CP_AD = as.numeric(VA_AD)/as.numeric(FIAS), # capital productivity with fixed asset
+           LP_AD= as.numeric(VA_AD)/as.numeric(Employment), # Labor productivity after depreciation (after depreciation, taxes etc)
+           CP_AD = as.numeric(VA_AD)/as.numeric(FIAS), # capital productivity with fixed asset (after depreciation, taxes etc)
            
            C_com = as.numeric(TOAS)/as.numeric(Wages), # capital intensity with total asset
            C_com_FI = as.numeric(FIAS)/as.numeric(Wages), # capital intensity with fixed asset
@@ -92,19 +94,28 @@ fun_data_clean <- function(data_c){
            def_RoC_G_FI = as.numeric(def_EBTA.Gross.Profit)/(as.numeric(def_FIAS)+as.numeric(def_Deprecation)), # gross profit rate without interest 
            
            #def_RoC_G_AD = as.numeric(def_PL)/as.numeric(def_TOAS), # gross profit rate with interest after depreciation
-           def_RoC_G_AD_FI = as.numeric(def_EBTA.Operating.Profit)/as.numeric(def_FIAS), # gross profit rate without interest after depreciation 
+           def_RoC_G_AD_FI = as.numeric(def_EBTA.Operating.Profit)/as.numeric(def_FIAS)#, # gross profit rate without interest after depreciation 
            
            #def_RoC_N = as.numeric(def_PLAT)/as.numeric(def_TOAS) # net profit rate (after tax) 
            #  
            ) #%>% 
 
+  print("Part A.2")
+  data_c <- data_c %>%
 
+    mutate(TFP = VA / (LP**WS + CP**(1-WS)), # TFP, imputed from accounting identity TFP = Y / (weighted inputs)
+           TFP_AD = VA_AD / (LP_AD**WS_AD + CP_AD**(1-WS_AD)), # after depreciation
+           def_TFP = def_VA / (def_LP**WS + def_CP**(1-WS)), # deflated
+           def_TFP_AD = def_VA_AD / (def_LP_AD**WS_AD + def_CP_AD**(1-WS_AD)) 
+           )
+           
+  # firm size growth
+  
   print("Part B")
   data_c <- data_c %>%
   
     group_by(ID) %>% # group by firm index
     
-    # firm size growth
     mutate(Employment_g = (as.numeric(Employment) - 
                        lag(as.numeric(Employment),1))/lag(as.numeric(Employment),1),    # wrt employment 
            FIAS_g = (as.numeric(FIAS) - 
@@ -124,7 +135,7 @@ fun_data_clean <- function(data_c){
                        lag(as.numeric(def_Sales),1))/lag(as.numeric(def_Sales),1)    # wrt sales
            ) #%>% 
     
-    # productivity growth
+  # productivity growth
 
   print("Part C")
   data_c <- data_c %>%
@@ -139,23 +150,81 @@ fun_data_clean <- function(data_c){
            def_LP_g = (def_LP - lag(def_LP,1))/lag(def_LP,1),
            def_LP_AD_g = (def_LP_AD - lag(def_LP_AD,1))/lag(def_LP_AD,1),   # labor productivity deflated
            
-           Zeta = CP_g * (1-WS) + LP_g * WS,
-           Zeta_AD = CP_AD_g * (1-WS_AD) + LP_AD_g * WS_AD,                 # TFP undeflated
-           lpdef_Zeta = CP_g * (1-WS) + def_LP_g * WS,
-           lpdef_Zeta_AD = CP_AD_g * (1-WS_AD) + def_LP_AD_g * WS_AD,       # TFP with only capital productivity deflated (labor productivity undeflated)
-           def_Zeta = def_CP_g * (1-WS) + def_LP_g * WS,
-           def_Zeta_AD = def_CP_AD_g * (1-WS_AD) + def_LP_AD_g * WS_AD      # TFP deflated (both capital and labor productivity)
+           TFP_g = (TFP - lag(TFP,1))/lag(TFP,1),
+           TFP_AD_g = (TFP_AD - lag(TFP_AD,1))/lag(TFP_AD,1),                 # TFP undeflated
+           def_TFP_g = (def_TFP - lag(def_TFP,1))/lag(def_TFP,1),
+           def_TFP_AD_g = (def_TFP_AD - lag(def_TFP_AD,1))/lag(def_TFP_AD,1)      # TFP deflated (both capital and labor productivity)
            ) #%>% # G_CP
     
-    # etc
+  # etc
     
   print("Part D")
   data_c <- data_c %>%
 
     mutate(PW_g = (PW - lag(PW,1))/lag(PW,1)) %>% #
     mutate(PW_AD_g = (PW_AD - lag(PW_AD,1))/lag(PW_AD,1)) #
-    
+
+  # log returns
+  
   print("Part E")
+  data_c <- data_c %>%
+
+    # firm size
+    mutate(Employment_lr = log(as.numeric(Employment)/lag(as.numeric(Employment),1)),    # wrt employment 
+           FIAS_lr = log(as.numeric(FIAS)/lag(as.numeric(FIAS),1)),    # wrt fixed assets
+           TOAS_lr = log(as.numeric(TOAS)/lag(as.numeric(TOAS),1)),    # wrt total assets
+           SALE_lr = log(as.numeric(Sales)/lag(as.numeric(Sales),1)),    # wrt sales
+           
+           # And the same variables again defalated
+           
+           def_FIAS_lr = log(as.numeric(def_FIAS)/lag(as.numeric(def_FIAS),1)),   # wrt fixed assets
+           def_TOAS_lr = log(as.numeric(def_TOAS)/lag(as.numeric(def_TOAS),1)),   # wrt total assets
+           def_SALE_lr = log(as.numeric(def_Sales)/lag(as.numeric(def_Sales),1))    # wrt sales
+           ) %>% 
+    
+    # productivity 
+    
+    mutate(CP_lr = log(CP/lag(CP,1)),
+           CP_AD_lr = log(CP_AD/lag(CP_AD,1)),                   # capital productivity undeflated
+           LP_lr = log(LP/lag(LP,1)),
+           LP_AD_lr = log(LP_AD/lag(LP_AD,1)),                   # labor productivity undeflated
+           
+           def_CP_lr = log(def_CP/lag(def_CP,1)),
+           def_CP_AD_lr = log(def_CP_AD/lag(def_CP_AD,1)),       # capital productivity deflated
+           def_LP_lr = log(def_LP/lag(def_LP,1)),
+           def_LP_AD_lr = log(def_LP_AD/lag(def_LP_AD,1)),       # labor productivity deflated
+           
+           TFP_lr = log(TFP/lag(TFP,1)),
+           TFP_AD_lr = log(TFP_AD/lag(TFP_AD,1)),               # TFP undeflated
+           def_TFP_lr = log(def_TFP/lag(def_TFP,1)),
+           def_TFP_AD_lr = log(def_TFP_AD/lag(def_TFP_AD,1))    # TFP deflated 
+           ) %>% # G_CP
+    
+    # etc
+    
+    mutate(PW_lr = log(PW/lag(PW,1))) %>% #
+    mutate(PW_AD_lr = log(PW_AD/lag(PW_AD,1))) #%>% #
+
+  print("Part F")
+  data_c <- data_c %>%
+    # first difference variables
+    mutate(CP_diff = CP - lag(CP,1),
+           CP_AD_diff = CP_AD - lag(CP_AD,1),                   # capital productivity undeflated
+           LP_diff = LP - lag(LP,1),
+           LP_AD_diff = LP_AD - lag(LP_AD,1),                   # labor productivity undeflated
+           
+           def_CP_diff = def_CP - lag(def_CP,1),
+           def_CP_AD_diff = def_CP_AD - lag(def_CP_AD,1),       # capital productivity deflated
+           def_LP_diff = def_LP - lag(def_LP,1),
+           def_LP_AD_diff = def_LP_AD - lag(def_LP_AD,1),       # labor productivity deflated
+           
+           TFP_diff = TFP - lag(TFP, 1),
+           TFP_AD_diff = TFP_AD - lag(TFP_AD, 1),               # TFP undeflated
+           def_TFP_diff = def_TFP - lag(def_TFP, 1),
+           def_TFP_AD_diff = def_TFP_AD - lag(def_TFP_AD, 1)    # TFP deflated 
+           ) 
+
+  print("Part G")
   return(data_c)
 }
 

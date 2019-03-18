@@ -132,11 +132,12 @@ cols = [{"1998": 1, "1999": 1, "2000": 1, "2001": 1, "2002": 1, "2003": 1, "2004
         {"1998": 84, "1999": 83, "2000": 84, "2001": 65, "2002": 78, "2003": 66, "2004": 131, "2005": 102, "2006": 101, "2007": 104, "2008": 52, "2009_35": 52, "2009_8": 45, "2010": 52, "2011": 52, "2012incl_EMPL": 63, "2013incl_EMPL": 77}, # Interest
         {"1998": 92, "1999": 91, "2000": 92, "2001": 71, "2002": 86, "2003": 73, "2004": 143, "2005": 116, "2006": 113, "2007": 118, "2008": None, "2009_35": None, "2009_8": None, "2010": None, "2011": None, "2012incl_EMPL": 73, "2013incl_EMPL": 87}, # Wages
         {"1998": 40, "1999": 44, "2000": 39, "2001": 27, "2002": 39, "2003": 29, "2004": 54, "2005": 52, "2006": 52, "2007": 52, "2008": 64, "2009_35": 64, "2009_8": 57, "2010": 64, "2011": 64, "2012incl_EMPL": 79, "2013incl_EMPL": 91}, # EMPL
+        {"1998": 99, "1999": 98, "2000": 99, "2001": 78, "2002": 93, "2003": 80, "2004": 150, "2005": 123, "2006": 120, "2007": 125, "2008": None, "2009_35": None, "2009_8": None, "2010": None, "2011": None, "2012incl_EMPL": None, "2013incl_EMPL": None}, # EMPL
         ]
 
-colnamelist = ["ID", "Phone", "Founding Year", "Founding Month", "Sector", "ZIP", "FirmType", "Sales", "TOAS", "FIAS", "EBTA Operating Profit", "EBTA Gross Profit", "Tax", "Deprecation", "Interest", "Wages", "Employment"]
-final_columnlist = ["ID", "Phone_ZIP", "Phone", "ZIP", "Province Code", "Province", "Year", "Sector Short", "Sector", "FirmType", "Firm Age", "Founding Year", "Founding Month", "Sales", "TOAS", "FIAS", "EBTA Operating Profit", "EBTA Gross Profit", "Tax", "Deprecation", "Interest", "Wages", "Employment"]
-final_columnlist_merge = ["ID", "Phone_ZIP", "Phone", "ZIP", "Province Code", "Province", "Year", "Sector Short", "Sector", "FirmType", "Firm Age", "Founding Year", "Founding Month", "Sales", "TOAS", "FIAS", "EBTA Operating Profit", "EBTA Gross Profit", "Tax", "Deprecation", "Interest", "Wages", "Employment", "ID_imputed"]
+colnamelist = ["ID", "Phone", "Founding Year", "Founding Month", "Sector", "ZIP", "FirmType", "Sales", "TOAS", "FIAS", "EBTA Operating Profit", "EBTA Gross Profit", "Tax", "Deprecation", "Interest", "Wages", "Employment", "Intermediate Input"]
+final_columnlist = ["ID", "Phone_ZIP", "Phone", "ZIP", "Province Code", "Province", "Year", "Sector Short", "Sector", "FirmType", "Firm Age", "Founding Year", "Founding Month", "Sales", "TOAS", "FIAS", "EBTA Operating Profit", "EBTA Gross Profit", "Tax", "Deprecation", "Interest", "Wages", "Employment", "Intermediate Input"]
+final_columnlist_merge = ["ID", "Phone_ZIP", "Phone", "ZIP", "Province Code", "Province", "Year", "Sector Short", "Sector", "FirmType", "Firm Age", "Founding Year", "Founding Month", "Sales", "TOAS", "FIAS", "EBTA Operating Profit", "EBTA Gross Profit", "Tax", "Deprecation", "Interest", "Wages", "Employment", "Intermediate Input", "ID_imputed"]
 zipdict = {'01':'01','02':'01','03':'03','04':'03','05':'05','06':'05','07':'05','10':'10','11':'10','12':'10','13':'13','15':'15','16':'15','20':'20','21':'21','22':'21','23':'23','24':'23','25':'25','26':'25','27':'25','30':'30','31':'31','32':'31','33':'33','34':'33','35':'35','36':'35','40':'40','41':'41','42':'41','43':'43','44':'43','45':'45','46':'45','47':'45','51':'51','52':'51','53':'53','54':'53','55':'55','56':'55','57':'57','61':'61','62':'61','63':'61','64':'61','65':'65','66':'65','67':'65','71':'71','72':'71','73':'73','74':'73','75':'75','81':'81','83':'83','84':'83','85':'85','86':'86'}
 provincedict = {'01':'Inner Mongolia','03':'Shanxi','05':'Hebei','10':'Beijing','13':'Jilin','15':'Heilongjiang','20':'Shanghai','21':'Jiangsu','23':'Anhui','25':'Shandong','30':'Tianjin','31':'Zhejiang','33':'Jiangxi','35':'Fujian','40':'Chongqing','41':'Hunan','43':'Hubei','45':'Henan','51':'Guangdong','53':'Guangxi','55':'Guizhou','57':'Hainan','61':'Sichuan','65':'Yunnan','71':'Shaanxi','73':'Gansu','75':'Ningxia','81':'Qinghai','83':'Xinjiang','85':'Tibet Autonomous Region','86':'unknown'}
 
@@ -269,7 +270,7 @@ print(sum(dflookup2.duplicated(["ID"])))
 # 170128
 dflookup2.to_pickle("lookuptable.pkl")
 
-raise SystemExit
+#raise SystemExit
 
 df_combined_merge = pd.merge(df_combined, dflookup2, left_on="Phone_ZIP", right_on="Phone_ZIP", how="left")
 print(df_combined_merge.head())

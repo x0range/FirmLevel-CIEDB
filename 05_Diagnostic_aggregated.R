@@ -244,19 +244,19 @@ pov_cut <- 0.995
 
 
 
-fun_plot_marginal(pdf_name = "Figure_Country_Year_LP", title = "Log Density of Labor Productivty by Year", cond_ind = 2, var_ind = 7, x_lab = "LP", c_names = Size_p$Year, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_LP", title = "Log Density of Labor Productivty by Year", cond_name = "Year", var_name = "def_LP", x_lab = "LP", c_names = Size_p$Year, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Year_LP_Growth", title = "Log Density of Labor Productivty Growth by Year", cond_ind = 2, var_ind = 8, x_lab = "LP Growth(%)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_LP_Growth", title = "Log Density of Labor Productivty Growth by Year", cond_name = "Year", var_name = "def_LP_g", x_lab = "LP Growth(%)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Year_TFP_Growth", title = "Log Density of TFP Growth by Year", cond_ind = 2, var_ind = 9, x_lab = "TFP (%)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_TFP_Growth", title = "Log Density of TFP Growth by Year", cond_name = "Year", var_name = "def_Zeta", x_lab = "TFP (%)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 ## cross-sectional plots of LP and LP\_change (country-size)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Size_LP", title = "Log Density of Labor Productivty by Size", cond_ind = 3, var_ind = 7, x_lab = "LP", c_names = c(1:4), neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Size_LP", title = "Log Density of Labor Productivty by Size", cond_name = "COMPCAT", var_name = "def_LP", x_lab = "LP", c_names = c(1:4), neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Size_LP_Growth", title = "Log Density of Labor Productivty Growth by Size", cond_ind = 3, var_ind = 8, x_lab = "LP Growth(%)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Size_LP_Growth", title = "Log Density of Labor Productivty Growth by Size", cond_name = "COMPCAT", var_name = "def_LP_g", x_lab = "LP Growth(%)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Size_TFP_Growth", title = "Log Density of TFP Growth by Size", cond_ind = 3, var_ind = 9, x_lab = "TFP Growth(%)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Size_TFP_Growth", title = "Log Density of TFP Growth by Size", cond_name = "COMPCAT", var_name = "def_Zeta", x_lab = "TFP Growth(%)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 
 ## cross-sectional plots of LP and LP\_change (country-industry)

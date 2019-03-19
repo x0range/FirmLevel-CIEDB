@@ -167,15 +167,18 @@ legend(par('usr')[2], par('usr')[4],  xpd=NA, legend = leg, lty = rep(1, c(ncol(
 ## Prod variables
 
 
-fun_plot_marginal <- function(pdf_name, title, cond_ind, var_ind, x_lab, c_names, neg_cut, pov_cut, cut_num, plot_name){
+fun_plot_marginal <- function(pdf_name, title, cond_name, var_name, x_lab, c_names, neg_cut, pov_cut, cut_num, plot_name){
   ### LP_change
   
     pdf(paste(pdf_name, ".pdf", sep = ""), height = 4.8, width = 4)
   par(mfrow=c(1,1), mar=c(3, 2.5, 1, 1), mgp=c(1.5,.3,0), tck=-.01, oma=c(0,0,2,0))
 
-  dd <- df_cut %>%
-    select(ID, Year, COMPCAT, Sector.Short, Province.Code, FirmType, def_LP, def_LP_g, def_Zeta) 
-    
+  dd <- df_cut #%>%
+  #  select(ID, Year, COMPCAT, Sector.Short, Province.Code, FirmType, def_LP, def_LP_g, def_Zeta) 
+
+  var_ind <- match(var_name, colnames(dd2))
+  cond_ind <- match(cond_name, colnames(dd2))
+  
   dd <- as.data.frame(dd)
   names(dd)
   dd$Cond <- dd[, cond_ind] # conditional on this variable (categorical variable)
@@ -260,21 +263,21 @@ fun_plot_marginal(pdf_name = "Figure_Country_Size_TFP_Growth", title = "Log Dens
 ind_name <- as.numeric(names(Ind_p)[-c(1, ncol(Ind_p))])
 
 
-fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP", title = "Log Density of Labor Productivty by Sector", cond_ind = 4, var_ind = 7, x_lab = "LP", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP", title = "Log Density of Labor Productivty by Sector", cond_name = "Sector.Short", var_name = "def_LP", x_lab = "LP", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP_Growth", title = "Log Density of Labor Productivty Growth by Sector", cond_ind = 4, var_ind = 8, x_lab = "LP Growth(%)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP_Growth", title = "Log Density of Labor Productivty Growth by Sector", cond_name = "Sector.Short", var_name = "def_LP_g",x_lab = "LP Growth(%)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Industry_TFP_Growth", title = "Log Density of TFP Growth by Sector", cond_ind = 4, var_ind = 9, x_lab = "TFP Growth(%)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_TFP_Growth", title = "Log Density of TFP Growth by Sector", cond_name = "Sector.Short", var_name = "def_Zeta", x_lab = "TFP Growth(%)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 ## cross-sectional plots of LP and LP\_change (province-type)
 pro_name <- as.numeric(names(Pro_p)[-c(1, ncol(Pro_p))])
 
 
-fun_plot_marginal(pdf_name = "Figure_Country_Province_LP", title = "Log Density of Labor Productivty by Province", cond_ind = 5, var_ind = 7, x_lab = "LP", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Province_LP", title = "Log Density of Labor Productivty by Province", cond_name = "Province", var_name = "def_LP", x_lab = "LP", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Province_LP_Growth", title = "Log Density of Labor Productivty Growth by Province", cond_ind = 5, var_ind = 8, x_lab = "LP Growth(%)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Province_LP_Growth", title = "Log Density of Labor Productivty Growth by Province", cond_name = "Province", var_name = "def_LP_g", x_lab = "LP Growth(%)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Province_TFP_Growth", title = "Log Density of TFP Growth by Province", cond_ind = 5, var_ind = 9, x_lab = "TFP Growth(%)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Province_TFP_Growth", title = "Log Density of TFP Growth by Province", cond_name = "Province", var_name = "def_Zeta", x_lab = "TFP Growth(%)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 
 
@@ -282,11 +285,11 @@ fun_plot_marginal(pdf_name = "Figure_Country_Province_TFP_Growth", title = "Log 
 type_name <- as.numeric(names(Type_p)[-c(1, ncol(Type_p))])
 
 
-fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP", title = "Log Density of Labor Productivty by Firm Type", cond_ind = 6, var_ind = 7, x_lab = "LP", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP", title = "Log Density of Labor Productivty by Firm Type", cond_name = "FirmType2", var_name = "def_LP", x_lab = "LP", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP_Growth", title = "Log Density of Labor Productivty Growth by Firm Type", cond_ind = 6, var_ind = 8, x_lab = "LP Growth(%)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP_Growth", title = "Log Density of Labor Productivty Growth by Firm Type", cond_name = "FirmType2", var_name = "def_LP_g", x_lab = "LP Growth(%)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_TFP_Growth", title = "Log Density of TFP Growth by Firm Type", cond_ind = 6, var_ind = 9, x_lab = "TFP Growth(%)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_TFP_Growth", title = "Log Density of TFP Growth by Firm Type", cond_name = "FirmType2", var_name = "def_Zeta", x_lab = "TFP Growth(%)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 
 ## ------------------------------------------------------------------------

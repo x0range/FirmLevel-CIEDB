@@ -1,0 +1,22 @@
+library(dplyr)
+load("/mnt/usb4/CIEDB_2009_2013/dataframe_including_FirmType2.Rda", verbose=T)
+#table(df$Province)
+#colnames(df)
+df$Output.Capital.Ratio <- df$def_Sales / df$def_FIAS 
+df$Capital.Intensity <- df$def_FIAS / df$Employment
+df$Backward.Linkage <- df$def_Intermediate.Input / df$def_Output
+provinces_mean <- df %>% group_by(Province) %>% summarize_if(is.numeric, mean, na.rm = TRUE)
+provinces_years_mean <- df %>% group_by(Province, Year) %>% summarize_if(is.numeric, mean, na.rm = TRUE)
+provinces_median <- df %>% group_by(Province) %>% summarize_if(is.numeric, median, na.rm = TRUE)
+provinces_years_median <- df %>% group_by(Province, Year) %>% summarize_if(is.numeric, median, na.rm = TRUE)
+provinces_n <- df %>% group_by(Province) %>% summarise_all(funs(sum(!is.na(.))))
+provinces_years_n <- df %>% group_by(Province, Year) %>% summarise_all(funs(sum(!is.na(.))))
+sectors_n <- df %>% group_by(Sector) %>% summarise_all(funs(sum(!is.na(.))))
+sectors_years_n <- df %>% group_by(Sector, Year) %>% summarise_all(funs(sum(!is.na(.))))
+sectors_median <- df %>% group_by(Sector) %>% summarize_if(is.numeric, median, na.rm = TRUE)
+sectors_years_median <- df %>% group_by(Sector, Year) %>% summarize_if(is.numeric, median, na.rm = TRUE)
+sectors_mean <- df %>% group_by(Sector) %>% summarize_if(is.numeric, mean, na.rm = TRUE)
+sectors_years_mean <- df %>% group_by(Sector, Year) %>% summarize_if(is.numeric, mean, na.rm = TRUE)
+save(sectors_years_mean, sectors_years_median, sectors_years_n, sectors_mean, sectors_median, sectors_n, file="summary_statistics_sectors.Rda")
+save(provinces_years_mean, provinces_years_median, provinces_years_n, provinces_mean, provinces_median, provinces_n, file="summary_statistics_provinces.Rda")
+#savehistory("province_sector_summary.Rhist")

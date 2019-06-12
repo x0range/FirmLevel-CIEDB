@@ -1,15 +1,18 @@
 ## ------------------------------------------------------------------------
 if (!'pacman' %in% installed.packages()[,'Package']) install.packages('pacman', repos='http://cran.r-project.org')
-pacman::p_load(dplyr,RColorBrewer,colorspace,knitr,tidyr)
+pacman::p_load(dplyr,RColorBrewer,colorspace,knitr,tidyr,devtools)
 
-load("China_data_set_incl_compounds.Rda")   # loads df
+devtools::load_all("fittinglevy")
+
+#load("China_data_set_incl_compounds.Rda")   # loads df
+load("dataframe_including_FirmType2.Rda")   # loads df
 
 country_names = c("PR China")
 
 names(df)
 
   df_cut <- df %>% 
-    select(ID, Year, Sector.Short, Province.Code, FirmType2, Employment,Employment_g, def_LP, def_LP_g, def_Zeta, RoC_G_FI, def_VA) %>%     # exchanged FirmType for FirmType2
+    select(ID, Year, Sector.Short, Province, Province.Code, FirmType2, Employment, Employment_g, def_LP_IO,  def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_g, def_RoC_G_FI, def_VA, def_VA_IO, def_FIAS_g, def_TFP_IO_diff) %>%     # exchanged FirmType for FirmType2
     filter(Employment > 0) %>% # Size index
     mutate(COMPCAT = ifelse((Employment >= 0 & Employment < 50), 1, 
                              ifelse((Employment >= 50 & Employment < 250), 2,
@@ -54,11 +57,11 @@ names(df)
         
        ## Firm type
        Type_p <- df_cut %>%
-        select(ID, Year, FirmType) %>%
+        select(ID, Year, FirmType2) %>%
         na.omit() %>%
-        group_by(FirmType) %>%
+        group_by(FirmType2) %>%
         filter(length(ID) > 10) %>% # removing the firm types less than 10 obs
-        group_by(Year, FirmType) %>%
+        group_by(Year, FirmType2) %>%
         summarise (n = n()) %>%
         mutate(freq = n / sum(n)) %>%
         group_by(Year)
@@ -67,15 +70,15 @@ names(df)
          group_by(Year) %>%
          summarise(n = sum(n))
      
-       Type_p <-  spread(Type_p[-c(3)], FirmType, freq)
+       Type_p <-  spread(Type_p[-c(3)], FirmType2, freq)
        Type_p$n <- n[[2]]
        
        
        ## Province
        Pro_p <- df_cut %>%
-        select(ID, Year, Province.Code) %>%
+        select(ID, Year, Province) %>%
         na.omit() %>%
-        group_by(Year, Province.Code) %>%
+        group_by(Year, Province) %>%
         summarise (n = n()) %>%
         mutate(freq = n / sum(n)) %>%
         group_by(Year)
@@ -84,11 +87,9 @@ names(df)
          group_by(Year) %>%
          summarise(n = sum(n))
      
-       Pro_p <-  spread(Pro_p[-c(3)], Province.Code, freq)
+       Pro_p <-  spread(Pro_p[-c(3)], Province, freq)
        Pro_p$n <- n[[2]]
        
-       
-
 ## ------------------------------------------------------------------------
 
 ### Plot for the proportions. One by one manually...
@@ -167,17 +168,23 @@ legend(par('usr')[2], par('usr')[4],  xpd=NA, legend = leg, lty = rep(1, c(ncol(
 ## Prod variables
 
 
-fun_plot_marginal <- function(pdf_name, title, cond_ind, var_ind, x_lab, c_names, neg_cut, pov_cut, cut_num, plot_name){
+fun_plot_marginal <- function(pdf_name, title, cond_name, var_name, x_lab, c_names, neg_cut, pov_cut, cut_num, plot_name){
   ### LP_change
   
     pdf(paste(pdf_name, ".pdf", sep = ""), height = 4.8, width = 4)
   par(mfrow=c(1,1), mar=c(3, 2.5, 1, 1), mgp=c(1.5,.3,0), tck=-.01, oma=c(0,0,2,0))
 
   dd <- df_cut %>%
-    select(ID, Year, COMPCAT, Sector.Short, Province.Code, FirmType, def_LP, def_LP_g, def_Zeta) 
-    
+    select(ID, Year, COMPCAT, Sector.Short, Province, Province.Code, FirmType2, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_RoC_G_FI, def_FIAS_g) 
+
+  var_ind <- match(var_name, colnames(dd))
+  cond_ind <- match(cond_name, colnames(dd))
+  
   dd <- as.data.frame(dd)
   names(dd)
+  print(colnames(dd))
+  print(cond_name)
+  print(cond_ind)
   dd$Cond <- dd[, cond_ind] # conditional on this variable (categorical variable)
   dd$Var <- dd[, var_ind] # take this variable 
 
@@ -219,6 +226,10 @@ fun_plot_marginal <- function(pdf_name, title, cond_ind, var_ind, x_lab, c_names
    c_hist <- hist(c_lp, breaks = seq(min(c_lp), max(c_lp),l= 100+1), plot = F)   
    c_ind <- which(c_names%in%c_uni[c]) # ignore this (it is from another script where I keep the legend to be consistent across countries)
   points(c_hist$mids, c_hist$density, pch = q_25(c_ind), cex = 0.4, col = color_ind[c_ind])
+  
+  levy_fit <- levy_fitting(dat_t = c_lp, bin_num = length(c_hist$mids)+1, include_standarderror=FALSE, include_Soofi=FALSE, fitting_method="QT") # Levy estimation
+  levy_q <- dstable(c_hist$mids, levy_fit$levy_para[1], levy_fit$levy_para[2], levy_fit$levy_para[3], levy_fit$levy_para[4])
+  lines(c_hist$mids, levy_q, col = color_ind[c_ind], lwd = 1., lty = 1) # Levy fit
 
    }
 
@@ -239,56 +250,107 @@ neg_cut <- 0.005
 pov_cut <- 0.995
 ## cross-sectional plots of LP and LP\_change (country-year)
 
+setwd("./Figures/")
 
 
-fun_plot_marginal(pdf_name = "Figure_Country_Year_LP", title = "Log Density of Labor Productivty by Year", cond_ind = 2, var_ind = 7, x_lab = "LP", c_names = Size_p$Year, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_LP", title = "Log Density of Labor Productivty by Year", cond_name = "Year", var_name = "def_LP_IO", x_lab = "LP", c_names = Size_p$Year, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Year_LP_Growth", title = "Log Density of Labor Productivty Growth by Year", cond_ind = 2, var_ind = 8, x_lab = "LP Growth(%)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_LP_Growth", title = "Log Density of Labor Productivty Growth by Year", cond_name = "Year", var_name = "def_LP_IO_g", x_lab = "LP Growth(%)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Year_TFP_Growth", title = "Log Density of TFP Growth by Year", cond_ind = 2, var_ind = 9, x_lab = "TFP (%)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_LP_LogReturn", title = "Log Density of Labor Productivty Log Returns by Year", cond_name = "Year", var_name = "def_LP_IO_lr", x_lab = "LP Log Returns", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Year_LP_imp_Diff", title = "Log Density of Labor Productivty (imp) Change by Year", cond_name = "Year", var_name = "def_LP_diff", x_lab = "LP Change", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Year_LP_Diff", title = "Log Density of Labor Productivty Change by Year", cond_name = "Year", var_name = "def_LP_IO_diff", x_lab = "LP Change", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Year_TFP_Change", title = "Log Density of TFP Change by Year", cond_name = "Year", var_name = "def_TFP_IO_diff", x_lab = "TFP (%)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Year_RoFIAS", title = "Log Density of Profitability (RoFIAS) by Year", cond_name = "Year", var_name = "def_RoC_G_FI", x_lab = "Profitability (RoFIAS)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Year_IR", title = "Log Density of the Investment Rate by Year", cond_name = "Year", var_name = "def_FIAS_g", x_lab = "Investment Rate", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 ## cross-sectional plots of LP and LP\_change (country-size)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Size_LP", title = "Log Density of Labor Productivty by Size", cond_ind = 3, var_ind = 7, x_lab = "LP", c_names = c(1:4), neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Size_LP", title = "Log Density of Labor Productivty by Size", cond_name = "COMPCAT", var_name = "def_LP_IO", x_lab = "LP", c_names = c(1:4), neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Size_LP_Growth", title = "Log Density of Labor Productivty Growth by Size", cond_ind = 3, var_ind = 8, x_lab = "LP Growth(%)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Size_LP_Growth", title = "Log Density of Labor Productivty Growth by Size", cond_name = "COMPCAT", var_name = "def_LP_IO_g", x_lab = "LP Growth(%)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Size_TFP_Growth", title = "Log Density of TFP Growth by Size", cond_ind = 3, var_ind = 9, x_lab = "TFP Growth(%)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Size_LP_LogReturn", title = "Log Density of Labor Productivty Log Returns by Size", cond_name = "COMPCAT", var_name = "def_LP_IO_lr", x_lab = "LP Log Returns", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
+fun_plot_marginal(pdf_name = "Figure_Country_Size_LP_imp_Diff", title = "Log Density of Labor Productivty (imp) Change by Size", cond_name = "COMPCAT", var_name = "def_LP_diff", x_lab = "LP Change", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Size_LP_Diff", title = "Log Density of Labor Productivty Change by Size", cond_name = "COMPCAT", var_name = "def_LP_IO_diff", x_lab = "LP Change", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Size_TFP_Change", title = "Log Density of TFP Change by Size", cond_name = "COMPCAT", var_name = "def_TFP_IO_diff", x_lab = "TFP Change(%)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Size_RoFIAS", title = "Log Density of Profitability (RoFIAS) by Size", cond_name = "COMPCAT", var_name = "def_RoC_G_FI", x_lab = "Profitability (RoFIAS)", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Size_IR", title = "Log Density of the Investment Rate by Size", cond_name = "COMPCAT", var_name = "def_FIAS_g", x_lab = "Investment Rate", c_names = c(1:4),  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 ## cross-sectional plots of LP and LP\_change (country-industry)
 ind_name <- as.numeric(names(Ind_p)[-c(1, ncol(Ind_p))])
 
 
-fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP", title = "Log Density of Labor Productivty by Sector", cond_ind = 4, var_ind = 7, x_lab = "LP", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP", title = "Log Density of Labor Productivty by Sector", cond_name = "Sector.Short", var_name = "def_LP_IO", x_lab = "LP", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP_Growth", title = "Log Density of Labor Productivty Growth by Sector", cond_ind = 4, var_ind = 8, x_lab = "LP Growth(%)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP_Growth", title = "Log Density of Labor Productivty Growth by Sector", cond_name = "Sector.Short", var_name = "def_LP_IO_g",x_lab = "LP Growth(%)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Industry_TFP_Growth", title = "Log Density of TFP Growth by Sector", cond_ind = 4, var_ind = 9, x_lab = "TFP Growth(%)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP_LogReturn", title = "Log Density of Labor Productivty Log Returns by Sector", cond_name = "Sector.Short", var_name = "def_LP_IO_lr",x_lab = "LP Log Returns", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-## cross-sectional plots of LP and LP\_change (province-type)
-pro_name <- as.numeric(names(Pro_p)[-c(1, ncol(Pro_p))])
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP_imp_Diff", title = "Log Density of Labor Productivty (imp) Change by Sector", cond_name = "Sector.Short", var_name = "def_LP_diff",x_lab = "LP Change", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_LP_Diff", title = "Log Density of Labor Productivty Change by Sector", cond_name = "Sector.Short", var_name = "def_LP_IO_diff",x_lab = "LP Change", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Province_LP", title = "Log Density of Labor Productivty by Province", cond_ind = 5, var_ind = 7, x_lab = "LP", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_TFP_Change", title = "Log Density of TFP Change by Sector", cond_name = "Sector.Short", var_name = "def_TFP_IO_diff", x_lab = "TFP Change(%)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Province_LP_Growth", title = "Log Density of Labor Productivty Growth by Province", cond_ind = 5, var_ind = 8, x_lab = "LP Growth(%)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_RoFIAS", title = "Log Density of Profitability (RoFIAS) by Sector", cond_name = "Sector.Short", var_name = "def_RoC_G_FI", x_lab = "Profitability (RoFIAS)", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Province_TFP_Growth", title = "Log Density of TFP Growth by Province", cond_ind = 5, var_ind = 9, x_lab = "TFP Growth(%)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
-
-
+fun_plot_marginal(pdf_name = "Figure_Country_Industry_IR", title = "Log Density of the Investment Rate by Sector", cond_name = "Sector.Short", var_name = "def_FIAS_g", x_lab = "Investment Rate", c_names = ind_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 ## cross-sectional plots of LP and LP\_change (province-type)
-type_name <- as.numeric(names(Type_p)[-c(1, ncol(Type_p))])
+pro_name <- names(Pro_p)[-c(1, ncol(Pro_p))]
+
+fun_plot_marginal(pdf_name = "Figure_Country_Province_LP", title = "Log Density of Labor Productivty by Province", cond_name = "Province", var_name = "def_LP_IO", x_lab = "LP", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Province_LP_Growth", title = "Log Density of Labor Productivty Growth by Province", cond_name = "Province", var_name = "def_LP_IO_g", x_lab = "LP Growth(%)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Province_LP_LogReturns", title = "Log Density of Labor Productivty Log Returns by Province", cond_name = "Province", var_name = "def_LP_IO_lr", x_lab = "LP Log Returns", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Province_LP_imp_Diff", title = "Log Density of Labor Productivty (imp) Change by Province", cond_name = "Province", var_name = "def_LP_diff", x_lab = "LP Change", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Province_LP_Diff", title = "Log Density of Labor Productivty Change by Province", cond_name = "Province", var_name = "def_LP_IO_diff", x_lab = "LP Change", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Province_TFP_Change", title = "Log Density of TFP Change by Province", cond_name = "Province", var_name = "def_TFP_IO_diff", x_lab = "TFP Change(%)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Province_RoFIAS", title = "Log Density of Profitability (RoFIAS) by Province", cond_name = "Province", var_name = "def_RoC_G_FI", x_lab = "Profitability (RoFIAS)", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Province_IR", title = "Log Density of the Investment Rate by Province", cond_name = "Province", var_name = "def_FIAS_g", x_lab = "Investment Rate", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
 
-fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP", title = "Log Density of Labor Productivty by Firm Type", cond_ind = 6, var_ind = 7, x_lab = "LP", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP_Growth", title = "Log Density of Labor Productivty Growth by Firm Type", cond_ind = 6, var_ind = 8, x_lab = "LP Growth(%)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_TFP_Growth", title = "Log Density of TFP Growth by Firm Type", cond_ind = 6, var_ind = 9, x_lab = "TFP Growth(%)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+## cross-sectional plots of LP and LP\_change (province-type)
+type_name <- names(Type_p)[-c(1, ncol(Type_p))]
+
+
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP", title = "Log Density of Labor Productivty by Firm Type", cond_name = "FirmType2", var_name = "def_LP_IO", x_lab = "LP", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP_Growth", title = "Log Density of Labor Productivty Growth by Firm Type", cond_name = "FirmType2", var_name = "def_LP_IO_g", x_lab = "LP Growth(%)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP_LogReturn", title = "Log Density of Labor Productivty Log Returns by Firm Type", cond_name = "FirmType2", var_name = "def_LP_IO_lr", x_lab = "LP Log Returns", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP_imp_Diff", title = "Log Density of Labor Productivty (imp) Change by Firm Type", cond_name = "FirmType2", var_name = "def_LP_diff", x_lab = "LP Change", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_LP_Diff", title = "Log Density of Labor Productivty Change by Firm Type", cond_name = "FirmType2", var_name = "def_LP_IO_diff", x_lab = "LP Change", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_TFP_Change", title = "Log Density of TFP Change by Firm Type", cond_name = "FirmType2", var_name = "def_TFP_IO_diff", x_lab = "TFP Change(%)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_RoFIAS", title = "Log Density of Profitability (RoFIAS) by Firm Type", cond_name = "FirmType2", var_name = "def_RoC_G_FI", x_lab = "Profitability (RoFIAS)", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Firm_Type_IR", title = "Log Density of the Investment Rate by Firm Type", cond_name = "FirmType2", var_name = "def_FIAS_g", x_lab = "Investment Rate", c_names = type_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
 
 
 ## ------------------------------------------------------------------------
-purl("Productivity_Analysis_Data.Rmd")  
+#purl("Productivity_Analysis_Data.Rmd")  
 

@@ -30,16 +30,6 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
   all_list <- list()
   res_list <- list()
   
-  if (FALSE) {
-    zz <- dat[[k]] %>%
-      select(IDNR, Year, COMPCAT_one, NACE_CAT, LP, LP_g, Zeta, EMPL) %>% # Firm ID, Year, Firm Size, Industry ID, Labor Produtivity, Labor Productivity Growth, TFP Growth, Employment
-      filter(EMPL > 1) %>% # remove self-employed persons
-      mutate(LP = LP / 1000) %>% # change the unit scale of the labor productivity by dividing it by 1000
-      mutate(LP_g = LP_g * 100) # percentage unit for the growth variables
-
-    zz <- as.data.frame(zz)
-  }
-
   # define S3 class of dat as data.frame. Up to this point, it is c("grouped_df", "tbl_df", "tbl", "data.frame") because this is what dplyr commands produce.
   dat <- data.frame(dat)
   
@@ -67,7 +57,7 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
 
 
     if (nrow(zz) == 0) {
-      all_list[[i]] <- NA
+      res_list <- NA
     } else {
         
       # get unique classes
@@ -77,8 +67,8 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
       c_uni_name_2 <- c()
       
       # get id numbers for unique classes
-      for (i in 1:length(c_uni)) {
-        c_uni_num[i] <- which(c_names %in% c_uni[i])
+      for (j in 1:length(c_uni)) {
+        c_uni_num[j] <- which(c_names %in% c_uni[j])
       }
       
       # get sorted class id names and numbers
@@ -98,8 +88,7 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
         #print(paste("    Class", as.character(c_uni_name[[c]])))
         #print(paste("      ", c, "out of", length(c_uni)))
         p_data <- zz$Var[zz$Cond == c_uni_name[c]] # this is not a dataframe but a simple array
-        #print(p_data)                              # is it?
-
+        #print(length(p_data))                              # is it?
         # fit Levy alpha-stable and extract return values
         fit_levy <- levy_fitting(dat_t = p_data, bin_num = bin_num, include_bootstrap=FALSE) 
         levy_parameters <- fit_levy$levy_para
@@ -109,38 +98,53 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
         fit_AEP <- Sub_fun_LM(p_data)
         AEP_parameters <- fit_AEP$para
         
-        # obtain AEP soofi ID score (requires obs_mid, est_sub_lm, obs_p)
-        # get binned data
-        # TODO: binning code is duplicated from fittinglevy/levy_fitting.R. To be cleaned up
-        p_data_h <- hist(p_data, plot = F, breaks = seq(min(p_data), max(p_data), l = bin_num)) # binning the data
-        obs_mid <- p_data_h$mids # location of the bin
-        obs_p <- p_data_h$counts / sum(p_data_h$counts) # normalized counts of the bin: the normalized empirical density
-        # normalized predicted density from the sub model 
-        pred_p_sub_b <- pdfaep4(obs_mid, fit_AEP)
-        pred_p_sub <- pred_p_sub_b/sum(pred_p_sub_b)
-        # soofi score
-        AEP_soofi_ID <- (1 - soofi_gen(obs_p, pred_p_sub)) * 100.
-
+        if (!is.null(AEP_parameters)) {
+          # obtain AEP soofi ID score (requires obs_mid, est_sub_lm, obs_p)
+          # get binned data
+          # TODO: binning code is duplicated from fittinglevy/levy_fitting.R. To be cleaned up
+          p_data_h <- hist(p_data, plot = F, breaks = seq(min(p_data), max(p_data), l = bin_num)) # binning the data
+          obs_mid <- p_data_h$mids # location of the bin
+          obs_p <- p_data_h$counts / sum(p_data_h$counts) # normalized counts of the bin: the normalized empirical density
+          # normalized predicted density from the sub model 
+          pred_p_sub_b <- pdfaep4(obs_mid, fit_AEP)
+          pred_p_sub <- pred_p_sub_b/sum(pred_p_sub_b)
+          # soofi score
+          AEP_soofi_ID <- (1 - soofi_gen(obs_p, pred_p_sub)) * 100.
+        }
+          
         # cross validation
         #CV_fun(n_fold = 10, n_rep = 10, uni_data = c_lp, distribution = "Levy") # Cross validation function
         #CV_fun(n_fold = 10, n_rep = 10, uni_data = c_lp, distribution = "AEP") Cross validation function
         #c_list[[c]] <- list(cv_levy, cv_AEP) # Cross validation function
+
+        ## rounding 
+        if (!is.null(AEP_parameters)) {
+          AEP_parameters_print <- list(round(AEP_parameters[[1]], 4),  round(AEP_parameters[[2]], 4),  round(AEP_parameters[[3]], 4),  round(AEP_parameters[[4]], 4))
+          AEP_soofi_ID_print <- round(AEP_soofi_ID, 4)
+        } else {
+          AEP_parameters_print <- list("","","","")
+          AEP_soofi_ID_print <- ""
+          AEP_soofi_ID <- NA
+        }
 
         # AIC
         if (compute_AIC) {
             #print("Computing AIC now")
             levy_aicv <- levy_AIC(para_levy=levy_parameters, observations=p_data)
             #print("Levy AIC computed")
-            AEP_aicv <- AEP_AIC(fit_AEP=fit_AEP, obs_mid=obs_mid)
-            #print("AEP AIC computed")
-
-            res_list[[c]] <- list(year_name=year, class_name=c_uni_name[[c]], class_num=c, year_num=i, number_observations=nrow(zz), levy_parameters=levy_parameters, levy_soofi_ID=levy_soofi_ID, levy_aic=levy_aicv, AEP_parameters=AEP_parameters, AEP_soofi_ID=AEP_soofi_ID, AEP_aic=AEP_aicv)
-            print(paste(var_name, "&", cond_name, "&", year, "&", c_uni_name[[c]], "&",  c, "&",  i, "&",  nrow(zz), "&", round(levy_parameters[[1]], 4), "&",  round(levy_parameters[[2]], 4), "&",  round(levy_parameters[[3]], 4), "&",  round(levy_parameters[[4]], 4), "&",  round(levy_soofi_ID, 2), "&",  round(levy_aicv, 4), "&",  round(AEP_parameters[[1]], 4), "&",  round(AEP_parameters[[2]], 4), "&",  round(AEP_parameters[[3]], 4), "&",  round(AEP_parameters[[4]], 4), "&",  round(AEP_soofi_ID, 2), "&",  round(AEP_aicv, 4), "\\"))
+            if (!is.null(AEP_parameters)) {
+              AEP_aicv <- AEP_AIC(fit_AEP=fit_AEP, obs_mid=obs_mid)
+              #print("AEP AIC computed")
+            } else {
+              AEP_aicv <- ""
+            }
+            
+            res_list[[c]] <- list(year_name=year, class_name=c_uni_name[[c]], class_num=c, year_num=i, number_observations=length(p_data), levy_parameters=levy_parameters, levy_soofi_ID=levy_soofi_ID, levy_aic=levy_aicv, AEP_parameters=AEP_parameters, AEP_soofi_ID=AEP_soofi_ID, AEP_aic=AEP_aicv)
+            print(paste(var_name, "&", cond_name, "&", year, "&", c_uni_name[[c]], "&",  c, "&",  i, "&",  length(p_data), "&", round(levy_parameters[[1]], 4), "&",  round(levy_parameters[[2]], 4), "&",  round(levy_parameters[[3]], 4), "&",  round(levy_parameters[[4]], 4), "&",  round(levy_soofi_ID, 2), "&",  round(levy_aicv, 4), "&",  AEP_parameters_print[[1]], "&",  AEP_parameters_print[[2]], "&",  AEP_parameters_print[[3]], "&",  AEP_parameters_print[[4]], "&",  AEP_soofi_ID_print, "&",  round(AEP_aicv, 4), "\\"))
         } else {
-            res_list[[c]] <- list(year_name=year, class_name=c_uni_name[[c]], class_num=c, year_num=i, number_observations=nrow(zz), levy_parameters=levy_parameters, levy_soofi_ID=levy_soofi_ID, AEP_parameters=AEP_parameters, AEP_soofi_ID=AEP_soofi_ID)
-            print(paste(var_name, "&", cond_name, "&", year, "&", c_uni_name[[c]], "&",  c, "&",  i, "&",  nrow(zz), "&", round(levy_parameters[[1]], 4), "&",  round(levy_parameters[[2]], 4), "&",  round(levy_parameters[[3]], 4), "&",  round(levy_parameters[[4]], 4), "&",  round(levy_soofi_ID, 2), "&", "&",  round(AEP_parameters[[1]], 4), "&",  round(AEP_parameters[[2]], 4), "&",  round(AEP_parameters[[3]], 4), "&",  round(AEP_parameters[[4]], 4), "&",  round(AEP_soofi_ID, 4), "&", "\\"))
+            res_list[[c]] <- list(year_name=year, class_name=c_uni_name[[c]], class_num=c, year_num=i, number_observations=length(p_data), levy_parameters=levy_parameters, levy_soofi_ID=levy_soofi_ID, AEP_parameters=AEP_parameters, AEP_soofi_ID=AEP_soofi_ID)
+            print(paste(var_name, "&", cond_name, "&", year, "&", c_uni_name[[c]], "&",  length(p_data), "&", round(levy_parameters[[1]], 4), "&",  round(levy_parameters[[2]], 4), "&",  round(levy_parameters[[3]], 4), "&",  round(levy_parameters[[4]], 4), "&",  round(levy_soofi_ID, 2), "&", "&", AEP_parameters_print[[1]], "&",  AEP_parameters_print[[2]], "&",  AEP_parameters_print[[3]], "&",  AEP_parameters_print[[4]], "&",  AEP_soofi_ID_print, "&", "\\"))
         }            
-        #print(res_list)
       }
       #c_uni_list[[k]] <- c_uni_name # record the ordered name of unique class
       #c_uni_list_2[[k]] <- c_uni_name_2 #
@@ -148,6 +152,7 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
       #result_list[[k]] <- c_list # record the result from "fun_info_gen"
     }
     all_list[[i]] <- res_list
+    #browser()
   }
   return(all_list)
 }
@@ -158,7 +163,7 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
 ### main entry point 
 
 # 1. set working directory to where the data is
-setwd("~/dat/CIEDB_2009_2013/")
+#setwd("~/dat/CIEDB_2009_2013/")
 
 # 2. load and prepare data
 
@@ -173,16 +178,17 @@ country_names = c("PR China")
 
 # create generic firm size column
 df_cut <- df %>% 
-    select(ID, Year, Sector.Short, Province, FirmType2, Employment,Employment_g, def_LP, def_LP_g, def_Zeta, def_RoC_G_FI, def_VA) %>%
+    select(ID, Year, Sector.Short, Province, FirmType2, Employment, Employment_g, def_LP, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_RoC_G_FI, def_VA, def_VA_IO, def_FIAS_g) %>%
     filter(Employment > 0) %>% # Size index
     mutate(COMPCAT = ifelse((Employment >= 0 & Employment < 50), "S", 
                              ifelse((Employment >= 50 & Employment < 250), "M",
                              ifelse((Employment >= 250 & Employment < 1500), "L", "VL"))))  
 print("Prepared data. Commencing fit...")
-  
+
 
 # 3. Change working directory to where the plots should be stored
-setwd("~/dat/CIEDB_2009_2013/Figures")
+#setwd("~/dat/CIEDB_2009_2013/Figures")
+setwd("./Figures")
 
 
 # 4. define environment variables for plotting: cutoffs
@@ -193,52 +199,86 @@ pov_cut <- 0.995
 
 # 5. create plots
 
+#TESTS
+#year_name <- sort(unique(df$Year))
+#fit_results_year_IRT <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_FIAS_g", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+#fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP_diff", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+#fit_results_year_ROC <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_RoC_G_FI", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+
+#TEST END
+
 ## 5.0 year only plots
 year_name <- sort(unique(df$Year))
-fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_g", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_Zeta", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_ROC <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_RoC_G_FI", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 
-save(fit_results_year_LPR, fit_results_year_LPG, fit_results_year_TFP, fit_results_year_ROC, file="China_fit_results_year.Rda")
+fit_results_year_LIM <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO_g", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPL <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO_lr", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPD <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_diff", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPI <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO_diff", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_TFP_IO_diff", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_ROC <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_RoC_G_FI", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_IRT <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_FIAS_g", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+
+save(fit_results_year_LIM, fit_results_year_LPR, fit_results_year_LPG, fit_results_year_LPL, fit_results_year_LPD, fit_results_year_LPI, fit_results_year_TFP, fit_results_year_ROC, fit_results_year_IRT, file="China_fit_results_year.Rda")
 
 ## 5.1 cross-sectional plots of LP and LP\_change (country-size)
 
 # TODO: remove hard coded column indices from following function calls; work with column names instead!
 
-fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP_g", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_Zeta", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LIM <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP_IO", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP_IO_g", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPL <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP_IO_lr", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPD <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP_diff", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPI <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_LP_IO_diff", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_TFP_IO_diff", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 fit_results_year_ROC <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_RoC_G_FI", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_IRT <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "COMPCAT", var_name = "def_FIAS_g", c_names = c("S", "M", "L", "VL"), neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 
-save(fit_results_year_LPR, fit_results_year_LPG, fit_results_year_TFP, fit_results_year_ROC, file="China_fit_results_size.Rda")
+save(fit_results_year_LIM, fit_results_year_LPR, fit_results_year_LPG, fit_results_year_LPL, fit_results_year_LPD, fit_results_year_LPI, fit_results_year_TFP, fit_results_year_ROC, fit_results_year_IRT, file="China_fit_results_size.Rda")
 
 ## 5.2 cross-sectional plots of LP and LP\_change (country-industry)
 ind_name <- unique(df$Sector.Short)
 
-fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_LP", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_LP_g", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_Zeta", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LIM <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_LP", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_LP_IO", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_LP_IO_g", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPL <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_LP_IO_lr", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPD <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_LP_diff", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPI <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_LP_IO_diff", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_TFP_IO_diff", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 fit_results_year_ROC <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_RoC_G_FI", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_IRT <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Sector.Short", var_name = "def_FIAS_g", c_names = ind_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 
-save(fit_results_year_LPR, fit_results_year_LPG, fit_results_year_TFP, fit_results_year_ROC, file="China_fit_results_sect.Rda")
+save(fit_results_year_LIM, fit_results_year_LPR, fit_results_year_LPG, fit_results_year_LPL, fit_results_year_LPD, fit_results_year_LPI, fit_results_year_TFP, fit_results_year_ROC, fit_results_year_IRT, file="China_fit_results_sect.Rda")
 
 ## 5.3 cross-sectional plots of LP and LP\_change (province)
 pro_name <- unique(df$Province)
 
-fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_LP", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_LP_g", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_Zeta", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LIM <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_LP", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_LP_IO", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_LP_IO_g", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPL <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_LP_IO_lr", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPD <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_LP_diff", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPI <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_LP_IO_diff", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_TFP_IO_diff", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 fit_results_year_ROC <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_RoC_G_FI", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_IRT <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Province", var_name = "def_FIAS_g", c_names = pro_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 
-save(fit_results_year_LPR, fit_results_year_LPG, fit_results_year_TFP, fit_results_year_ROC, file="China_fit_results_prov.Rda")
+save(fit_results_year_LIM, fit_results_year_LPR, fit_results_year_LPG, fit_results_year_LPL, fit_results_year_LPD, fit_results_year_LPI, fit_results_year_TFP, fit_results_year_ROC, fit_results_year_IRT, file="China_fit_results_prov.Rda")
 
 ## 5.4 cross-sectional plots of LP and LP\_change (firm type)
 type_name <- unique(df$FirmType2)
 
-fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_LP", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_LP_g", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_Zeta", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LIM <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_LP", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_LP_IO", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_LP_IO_g", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPL <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_LP_IO_lr", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPD <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_LP_diff", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPI <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_LP_IO_diff", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_TFP_IO_diff", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 fit_results_year_ROC <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_RoC_G_FI", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_IRT <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "FirmType2", var_name = "def_FIAS_g", c_names = type_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 
-save(fit_results_year_LPR, fit_results_year_LPG, fit_results_year_TFP, fit_results_year_ROC, file="China_fit_results_type.Rda")
+save(fit_results_year_LIM, fit_results_year_LPR, fit_results_year_LPG, fit_results_year_LPL, fit_results_year_LPD, fit_results_year_LPI, fit_results_year_TFP, fit_results_year_ROC, fit_results_year_IRT, file="China_fit_results_type.Rda")

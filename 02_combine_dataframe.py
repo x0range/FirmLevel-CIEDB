@@ -238,6 +238,8 @@ df_combined = pd.DataFrame(columns=final_columnlist)
 years = list(range(1998, 2014))
 #years = list(range(2012, 2014))
 
+# impute missing IDs based on ZIP code and Phone number, using Phone_ZIP - ID lookup table
+
 dflookup = pd.read_pickle("lookuptable.pkl")
 dflookup = dflookup.drop_duplicates(["Phone_ZIP"])
 
@@ -247,13 +249,16 @@ for year in years:
     
 df_merge = pd.merge(df_combined, dflookup, left_on="Phone_ZIP", right_on="Phone_ZIP", how="left")
 df_merge.columns = final_columnlist_merge
-featherOutputFile = "All_years_reduced_without_manual_matching.feather"
+featherOutputFile = "All_years_reduced.feather" # actually this is already including imputed IDs
+#featherOutputFile = "All_years_reduced_without_manual_matching.feather" # actually this is already including imputed IDs
 df_merge = df_merge.reset_index(drop=True)
 #pdb.set_trace()
 feather.write_dataframe(df_merge, featherOutputFile)
 
 
 #raise SystemExit
+
+# rebuild Phone_ZIP - ID lookup table
 
 dflookup = df_combined[["ID", "Phone_ZIP"]]
 print(sum(dflookup.duplicated(["ID", "Phone_ZIP"])))
@@ -271,7 +276,9 @@ print(sum(dflookup2.duplicated(["ID"])))
 # 170128
 dflookup2.to_pickle("lookuptable.pkl")
 
-#raise SystemExit
+raise SystemExit
+
+# impute IDs based on newly constructed lookup table (old table already applied above)
 
 df_combined_merge = pd.merge(df_combined, dflookup2, left_on="Phone_ZIP", right_on="Phone_ZIP", how="left")
 print(df_combined_merge.head())

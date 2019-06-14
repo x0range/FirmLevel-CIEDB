@@ -187,57 +187,61 @@ fun_plot_marginal <- function(pdf_name, title, cond_name, var_name, x_lab, c_nam
   print(cond_ind)
   dd$Cond <- dd[, cond_ind] # conditional on this variable (categorical variable)
   dd$Var <- dd[, var_ind] # take this variable 
-
+  
+  #dd$Var[!is.finite(dd$Var)] <- NA
+  
   dd <- dd %>%
     select(ID, Cond, Var) %>%
     na.omit() %>%
     filter(Var > quantile(Var, neg_cut) & Var < quantile(Var, pov_cut)) %>% # cut the tails
     group_by(Cond) %>%
     filter(length(ID) > cut_num) # cut_num: the minimum # of obs for each class
-  
-  dd_info <- dd %>% # for the min and maz value of the y and x axis
-    group_by(Cond) %>%
-    summarise(x_min = min(hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$mids),
-              x_max = max(hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$mids),
-              y_min = min(hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$density[hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$density > 0]),
-              y_max = max(hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$density)
-              )
-   
-  x_min <- min(dd_info$x_min)
-  y_min <- min(dd_info$y_min)
-  x_max <- max(dd_info$x_max)
-  y_max <- max(dd_info$y_max) 
-  
-  c_uni <- sort(unique(dd$Cond))
 
-  color_ind <- rainbow_hcl(length(c_names))
+  if (nrow(dd)>cut_num) {
+      dd_info <- dd %>% # for the min and maz value of the y and x axis
+        group_by(Cond) %>%
+        summarise(x_min = min(hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$mids),
+                  x_max = max(hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$mids),
+                  y_min = min(hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$density[hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$density > 0]),
+                  y_max = max(hist(Var, breaks = seq(min(Var), max(Var),l= 100+1), plot = F)$density)
+                  )
+       
+      x_min <- min(dd_info$x_min)
+      y_min <- min(dd_info$y_min)
+      x_max <- max(dd_info$x_max)
+      y_max <- max(dd_info$y_max) 
+      
+      c_uni <- sort(unique(dd$Cond))
 
-  plot(c(x_min, x_max), c(y_min, y_max), cex = 0,  log = "y", yaxt = "n", xaxt = "n", cex.main = 1.2, xlab = x_lab, ylab = "Log-Density", main = title, cex.main = 0.8)
-  axis(side = 1, lwd = 0.3, cex.axis=0.9)
-  axis(side = 2, lwd = 0.3, cex.axis=.9)
-  
-  q_25 <- function(n){ ## to use the pch argument in the plot function with more than 25 categories (sectors and provinces)
-    apply(data.frame(n), 1, function(x) ifelse(x > 25, x-25,x)  )
-  } 
-  
-   for(c in 1:length(c_uni)){
-  print(c_uni[c])
-   c_lp <- dd$Var[dd$Cond == c_uni[c]] # get each category
-   c_hist <- hist(c_lp, breaks = seq(min(c_lp), max(c_lp),l= 100+1), plot = F)   
-   c_ind <- which(c_names%in%c_uni[c]) # ignore this (it is from another script where I keep the legend to be consistent across countries)
-  points(c_hist$mids, c_hist$density, pch = q_25(c_ind), cex = 0.4, col = color_ind[c_ind])
-  
-  levy_fit <- levy_fitting(dat_t = c_lp, bin_num = length(c_hist$mids)+1, include_standarderror=FALSE, include_Soofi=FALSE, fitting_method="QT") # Levy estimation
-  levy_q <- dstable(c_hist$mids, levy_fit$levy_para[1], levy_fit$levy_para[2], levy_fit$levy_para[3], levy_fit$levy_para[4])
-  lines(c_hist$mids, levy_q, col = color_ind[c_ind], lwd = 1., lty = 1) # Levy fit
+      color_ind <- rainbow_hcl(length(c_names))
 
-   }
+      plot(c(x_min, x_max), c(y_min, y_max), cex = 0,  log = "y", yaxt = "n", xaxt = "n", cex.main = 1.2, xlab = x_lab, ylab = "Log-Density", main = title, cex.main = 0.8)
+      axis(side = 1, lwd = 0.3, cex.axis=0.9)
+      axis(side = 2, lwd = 0.3, cex.axis=.9)
+      
+      q_25 <- function(n){ ## to use the pch argument in the plot function with more than 25 categories (sectors and provinces)
+        apply(data.frame(n), 1, function(x) ifelse(x > 25, x-25,x)  )
+      } 
+      
+       for(c in 1:length(c_uni)){
+      print(c_uni[c])
+       c_lp <- dd$Var[dd$Cond == c_uni[c]] # get each category
+       c_hist <- hist(c_lp, breaks = seq(min(c_lp), max(c_lp),l= 100+1), plot = F)   
+       c_ind <- which(c_names%in%c_uni[c]) # ignore this (it is from another script where I keep the legend to be consistent across countries)
+      points(c_hist$mids, c_hist$density, pch = q_25(c_ind), cex = 0.4, col = color_ind[c_ind])
+      
+      levy_fit <- levy_fitting(dat_t = c_lp, bin_num = length(c_hist$mids)+1, include_standarderror=FALSE, include_Soofi=FALSE, fitting_method="QT") # Levy estimation
+      levy_q <- dstable(c_hist$mids, levy_fit$levy_para[1], levy_fit$levy_para[2], levy_fit$levy_para[3], levy_fit$levy_para[4])
+      lines(c_hist$mids, levy_q, col = color_ind[c_ind], lwd = 1., lty = 1) # Levy fit
 
-c_ind <-  which(c_names%in%c_uni)
+       }
+
+    c_ind <-  which(c_names%in%c_uni)
 
 
-    legend("topright", legend = c_names[c_ind], pch = q_25(c_ind), col = color_ind[c_ind], bty='n', xpd=NA, cex = .8, ncol = 3)
+        legend("topright", legend = c_names[c_ind], pch = q_25(c_ind), col = color_ind[c_ind], bty='n', xpd=NA, cex = .8, ncol = 3)
 
+  }
 
     #mtext(paste(title), side=3, line=1, outer=TRUE,cex= .9)
   dev.off()

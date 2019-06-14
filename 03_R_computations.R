@@ -3,6 +3,7 @@ require(dplyr)
 
 fun_data_clean <- function(data_c){
   data_c$ID_imputed[is.na(data_c$ID_imputed)] <- data_c$Phone_ZIP[is.na(data_c$ID_imputed)]
+  data_c$Firm.Age[data_c$Firm.Age>500] <- NA
   #print(colnames(data_c))
   data_c$ID <- data_c$ID_imputed
   

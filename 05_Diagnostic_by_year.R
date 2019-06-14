@@ -32,7 +32,7 @@ fun_plot_marginal_years <- function(pdf_name, title, cond_name, var_name, x_lab,
   # reduce dataframe to required variables  
   # TODO: accept data frame df_cut as variable instead of operating with global variables
   dd2 <- df_cut %>%
-    select(ID, Year, COMPCAT, Sector.Short, Province, FirmType2, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_g, def_RoC_G_FI) 
+    select(ID, Year, COMPCAT, Sector.Short, Province, FirmType2, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_TFP_g, def_RoC_G_FI, def_FIAS_g) 
   dd2 <- as.data.frame(dd2)
   
   # obtain index of condition and variable columns
@@ -138,30 +138,28 @@ fun_plot_marginal_years <- function(pdf_name, title, cond_name, var_name, x_lab,
 ### main entry point 
 
 # 1. set working directory to where the data is
-setwd("~/dat/CIEDB_2009_2013/")
+#setwd("~/dat/CIEDB_2009_2013/")
 
 # 2. load and prepare data
 
-if (FALSE) {
-    #load("China_data_set_incl_compounds.Rda")   # loads df
-    load("dataframe_including_FirmType2.Rda")   # loads df
+#load("China_data_set_incl_compounds.Rda")   # loads df
+load("dataframe_including_FirmType2.Rda")   # loads df
 
-    # define country name
-    country_names = c("PR China")
+# define country name
+country_names = c("PR China")
 
-    #names(df)
+#names(df)
 
-    # create generic firm size column
-    df_cut <- df %>% 
-        select(ID, Year, Sector.Short, Province, FirmType2, Employment, Employment_g, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_g, def_RoC_G_FI, def_VA, def_VA_IO) %>%
-        filter(Employment > 0) %>% # Size index
-        mutate(COMPCAT = ifelse((Employment >= 0 & Employment < 50), "S", 
-                                 ifelse((Employment >= 50 & Employment < 250), "M",
-                                 ifelse((Employment >= 250 & Employment < 1500), "L", "VL"))))  
-}  
+# create generic firm size column
+df_cut <- df %>% 
+    select(ID, Year, Sector.Short, Province, FirmType2, Employment, Employment_g, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_TFP_g, def_RoC_G_FI, def_VA, def_VA_IO, def_RoC_G_FI, def_FIAS_g) %>%
+    filter(Employment > 0) %>% # Size index
+    mutate(COMPCAT = ifelse((Employment >= 0 & Employment < 50), "S", 
+                             ifelse((Employment >= 50 & Employment < 250), "M",
+                             ifelse((Employment >= 250 & Employment < 1500), "L", "VL"))))  
 
 # 3. Change working directory to where the plots should be stored
-setwd("~/dat/CIEDB_2009_2013/Figures")
+setwd("./Figures")
 
 
 # 4. define environment variables for plotting: cutoffs

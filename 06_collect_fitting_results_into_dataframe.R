@@ -1,5 +1,6 @@
 
 parse_result_list <- function(lst, fit_Variable, separator_Variable) {
+    #print("Enter")
     df3 <- data.frame(Fit_Variable=character(), Separator_Variable=character(), Year=integer(), Class=character(), class_idx=integer(), year_idx=integer(), Observations=integer(), Levy_alpha=double(), Levy_beta=double(), Levy_gamma=double(), Levy_delta=double(), Levy_Soofi_ID=double(), AEP_xi=double(), AEP_alpha=double(), AEP_kappa=double(), AEP_h=double(), AEP_Soofi_ID=double(), stringsAsFactors=FALSE)
     for (j in 1:length(lst)) {
         #print(j)
@@ -36,24 +37,28 @@ variable_List <- c("fit_results_year_LIM", "fit_results_year_LPR", "fit_results_
 variable_Name_List <- c("Labor productivity (imputed)", "Labor productivity", "Labor productivity growth", "Labor productivity log return", "Labor productivity (imputed) difference", "Labor productivity difference", "TFP", "Return on Capital", "Investment rate")
 
 for (j in 1:length(file_Name_List)) {
-    filename <- file_Name_List[[j]]
-    load(filename, verbose=T)
-    separator_Variable <- separator_Variables[[j]]
-    for (i in 1:length(variable_List)) {
-        if (exists(variable_List[[i]])) {
-            current_Variable <- get(variable_List[[i]])
-            df_next <- parse_result_list(current_Variable, variable_Name_List[[i]], separator_Variable)
-            df3 <- rbind(df3, df_next)     
+    #print(file_Name_List[[j]])
+    #print(file.exists(file_Name_List[[j]]))
+    if (file.exists(file_Name_List[[j]])) {
+        filename <- file_Name_List[[j]]
+        load(filename, verbose=T)
+        separator_Variable <- separator_Variables[[j]]
+        for (i in 1:length(variable_List)) {
+            if (exists(variable_List[[i]])) {
+                current_Variable <- get(variable_List[[i]])
+                df_next <- parse_result_list(current_Variable, variable_Name_List[[i]], separator_Variable)
+                df3 <- rbind(df3, df_next)     
+            }
         }
+        fit_results_year_LPR <- NULL
+        fit_results_year_LPG <- NULL
+        fit_results_year_LPL <- NULL
+        fit_results_year_LPD <- NULL
+        fit_results_year_LPI <- NULL
+        fit_results_year_TFP <- NULL
+        fit_results_year_ROC <- NULL
+        fit_results_year_IRT <- NULL
     }
-    fit_results_year_LPR <- NULL
-    fit_results_year_LPG <- NULL
-    fit_results_year_LPL <- NULL
-    fit_results_year_LPD <- NULL
-    fit_results_year_LPI <- NULL
-    fit_results_year_TFP <- NULL
-    fit_results_year_ROC <- NULL
-    fit_results_year_IRT <- NULL
 }
 
 save(df3, file="China_fit_results_dataframe.Rda")

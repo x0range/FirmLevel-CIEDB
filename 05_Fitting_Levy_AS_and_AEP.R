@@ -22,7 +22,7 @@ devtools::load_all("fittingAEP")
 #   pov_cut:     Type double:    positive cutoff point (one minus what quantile at the lower end will be removed as outlier)
 #   cut_num:     Type int:       the minimum size of each compound category to be fitted; smaller categories are ignored
 #   compute_AIC: Type bool:      indicator if Akaike IC should be computed as goodness measure. Takes long.
-fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut, pov_cut, cut_num, compute_AIC=FALSE) { 
+fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut, pov_cut, cut_num, compute_AIC=TRUE) { 
   #result_list <- list()
   #c_uni_list <- list()
   #c_uni_list_2 <- list()
@@ -130,9 +130,9 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
         # AIC
         if (compute_AIC) {
             #print("Computing AIC now")
-            levy_aicv <- levy_AIC(para_levy=levy_parameters, observations=p_data)
+            levy_aicv <- levy_AIC(para_levy=levy_parameters, observations=obs_mid)
             #print("Levy AIC computed")
-            if (!is.null(AEP_parameters)) {
+            if ((!is.null(AEP_parameters))&&(is.aep4(fit_AEP))&&(fit_AEP$ifailtext!="TAU4 is estimated as below limits of AEP4, Kappa fit instead")) { # second condition necessary, since AIC computation fails otherwise
               AEP_aicv <- AEP_AIC(fit_AEP=fit_AEP, obs_mid=obs_mid)
               #print("AEP AIC computed")
             } else {
@@ -210,15 +210,17 @@ pov_cut <- 0.995
 ## 5.0 year only plots
 year_name <- sort(unique(df$Year))
 
-fit_results_year_LIM <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 fit_results_year_LPR <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO_g", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_LPL <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO_lr", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_LPD <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_diff", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 fit_results_year_LPI <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO_diff", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
-fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_TFP_IO_diff", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 fit_results_year_ROC <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_RoC_G_FI", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 fit_results_year_IRT <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_FIAS_g", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+#save(fit_results_year_LPR, fit_results_year_LPI, fit_results_year_ROC, fit_results_year_IRT, file="China_fit_results_year.Rda")
+fit_results_year_LPG <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO_g", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+#save(fit_results_year_LPR, fit_results_year_LPG, fit_results_year_LPI, fit_results_year_ROC, fit_results_year_IRT, file="China_fit_results_year.Rda")
+fit_results_year_LIM <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPL <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_IO_lr", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_LPD <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_LP_diff", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
+fit_results_year_TFP <- fun_fit_levy_AEP(dat=df_cut, bin_num=100, cond_name = "Year", var_name = "def_TFP_IO_diff", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num=1000)
 
 save(fit_results_year_LIM, fit_results_year_LPR, fit_results_year_LPG, fit_results_year_LPL, fit_results_year_LPD, fit_results_year_LPI, fit_results_year_TFP, fit_results_year_ROC, fit_results_year_IRT, file="China_fit_results_year.Rda")
 

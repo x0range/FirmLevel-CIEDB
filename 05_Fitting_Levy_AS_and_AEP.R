@@ -132,15 +132,20 @@ fun_fit_levy_AEP <- function(dat, bin_num, cond_name, var_name, c_names, neg_cut
             #print("Computing AIC now")
             levy_aicv <- levy_AIC(para_levy=levy_parameters, observations=obs_mid)
             #print("Levy AIC computed")
-            if ((!is.null(AEP_parameters))&&(is.aep4(fit_AEP))&&(fit_AEP$ifailtext!="TAU4 is estimated as below limits of AEP4, Kappa fit instead")) { # second condition necessary, since AIC computation fails otherwise
+            if ((!is.null(AEP_parameters))&&(is.aep4(fit_AEP))&&(fit_AEP$ifailtext!="TAU4 is estimated as below limits of AEP4, Kappa fit instead")) { # second, third condition necessary, since AIC computation fails otherwise
+                #print(fit_AEP)
               AEP_aicv <- AEP_AIC(fit_AEP=fit_AEP, obs_mid=obs_mid)
               #print("AEP AIC computed")
             } else {
               AEP_aicv <- ""
             }
-            
+            if (is.numeric(AEP_aicv)) {
+                rounded_AEP_aicv = round(AEP_aicv, 4)
+            } else {
+                rounded_AEP_aicv = AEP_aicv
+            }
             res_list[[c]] <- list(year_name=year, class_name=c_uni_name[[c]], class_num=c, year_num=i, number_observations=length(p_data), levy_parameters=levy_parameters, levy_soofi_ID=levy_soofi_ID, levy_aic=levy_aicv, AEP_parameters=AEP_parameters, AEP_soofi_ID=AEP_soofi_ID, AEP_aic=AEP_aicv)
-            print(paste(var_name, "&", cond_name, "&", year, "&", c_uni_name[[c]], "&",  c, "&",  i, "&",  length(p_data), "&", round(levy_parameters[[1]], 4), "&",  round(levy_parameters[[2]], 4), "&",  round(levy_parameters[[3]], 4), "&",  round(levy_parameters[[4]], 4), "&",  round(levy_soofi_ID, 2), "&",  round(levy_aicv, 4), "&",  AEP_parameters_print[[1]], "&",  AEP_parameters_print[[2]], "&",  AEP_parameters_print[[3]], "&",  AEP_parameters_print[[4]], "&",  AEP_soofi_ID_print, "&",  round(AEP_aicv, 4), "\\"))
+            print(paste(var_name, "&", cond_name, "&", year, "&", c_uni_name[[c]], "&",  c, "&",  i, "&",  length(p_data), "&", round(levy_parameters[[1]], 4), "&",  round(levy_parameters[[2]], 4), "&",  round(levy_parameters[[3]], 4), "&",  round(levy_parameters[[4]], 4), "&",  round(levy_soofi_ID, 2), "&",  round(levy_aicv, 4), "&",  AEP_parameters_print[[1]], "&",  AEP_parameters_print[[2]], "&",  AEP_parameters_print[[3]], "&",  AEP_parameters_print[[4]], "&",  AEP_soofi_ID_print, "&",  rounded_AEP_aicv, "\\"))
         } else {
             res_list[[c]] <- list(year_name=year, class_name=c_uni_name[[c]], class_num=c, year_num=i, number_observations=length(p_data), levy_parameters=levy_parameters, levy_soofi_ID=levy_soofi_ID, AEP_parameters=AEP_parameters, AEP_soofi_ID=AEP_soofi_ID)
             print(paste(var_name, "&", cond_name, "&", year, "&", c_uni_name[[c]], "&",  length(p_data), "&", round(levy_parameters[[1]], 4), "&",  round(levy_parameters[[2]], 4), "&",  round(levy_parameters[[3]], 4), "&",  round(levy_parameters[[4]], 4), "&",  round(levy_soofi_ID, 2), "&", "&", AEP_parameters_print[[1]], "&",  AEP_parameters_print[[2]], "&",  AEP_parameters_print[[3]], "&",  AEP_parameters_print[[4]], "&",  AEP_soofi_ID_print, "&", "\\"))

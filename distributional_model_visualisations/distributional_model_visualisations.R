@@ -63,7 +63,7 @@ kappa_plot_values <- c(0.5, 1, 2)
 
 all_plot_labels <- list(kappa_plot_labels, heta_plot_labels, sigma_plot_labels, xi_plot_labels)
 all_plot_values <- list(kappa_plot_values, heta_plot_values, sigma_plot_values, xi_plot_values)
-plot_paramtext <- list("sigma=1, h=0.6, kappa=0.5", "xi=0, h=0.6, kappa=0.5", "xi=0, sigma=1, kappa=0.5", "xi=0, sigma=1, h=0.6")
+plot_paramtext <- list("xi=0, sigma=1, h=0.6", "xi=0, sigma=1, kappa=0.5", "xi=0, h=0.6, kappa=0.5", "sigma=1, h=0.6, kappa=0.5")
 
 plot_ltys <- c(1, 2, 4)
 plot_colors <- c("royalblue1", "blue3", "black")

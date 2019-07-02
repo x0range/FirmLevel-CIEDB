@@ -80,7 +80,9 @@ ggplot(data=result_df) +
     geom_line(aes(x=N, y=Mean.y, group=2, linetype=plot_labels[[2]], colour=plot_labels[[2]]), lwd=1) +             # Artificial data mean
     geom_line(aes(x=N, y=sd_theoretical, group=3, linetype=plot_labels[[3]], colour=plot_labels[[3]]), lwd=1) +     # Theoretical divergence 
     geom_ribbon(aes(x=N, ymin=Lower.x, ymax=Upper.x), fill="#0000BB33") +                                           # Data quantiles
-    geom_ribbon(aes(x=N, ymin=Lower.y, ymax=Upper.y), fill="#00BB0033") +                                           # Artificial data quantiles
+    geom_ribbon(aes(x=N, ymin=Lower.y, ymax=Upper.y), fill="#00BB0011") +                                           # Artificial data quantiles:  All
+    geom_ribbon(aes(x=N, ymin=Upper.x, ymax=Upper.y), fill="#00BB0033") +                                                                       # Non-overlapping area
+    geom_ribbon(data=result_df[result_df$Upper.x <= result_df$Lower.y, ], aes(x=N, ymin=Upper.x, ymax=Lower.y), fill="#FFFFFFFF") +             # White in area between quantiles
     theme_bw() +                                                                                                    # bw theme
     theme(axis.text = element_text(colour = 1, size = 12), axis.title.x = element_text(size = 15, vjust=-.2), axis.title.y = element_text(size = 15, vjust=0.3)) + # text style
     theme(legend.title=element_blank(), legend.text=element_text(colour = 1, size = 12), legend.position=c(1, 0),   
@@ -111,7 +113,9 @@ ggplot(data=result_df) +
     geom_line(aes(x=N, y=Mean.y, group=2, linetype=plot_labels[[2]], colour=plot_labels[[2]]), lwd=1) + 
     geom_line(aes(x=N, y=sd_theoretical, group=3, linetype=plot_labels[[3]], colour=plot_labels[[3]]), lwd=1) + 
     geom_ribbon(aes(x=N, ymin=Lower.x, ymax=Upper.x), fill="#0000BB33") +
-    geom_ribbon(aes(x=N, ymin=Lower.y, ymax=Upper.y), fill="#00BB0033") +
+    geom_ribbon(aes(x=N, ymin=Lower.y, ymax=Upper.y), fill="#00BB0011") +
+    geom_ribbon(aes(x=N, ymin=Upper.x, ymax=Upper.y), fill="#00BB0033") +
+    geom_ribbon(data=result_df[result_df$Upper.x <= result_df$Lower.y, ], aes(x=N, ymin=Upper.x, ymax=Lower.y), fill="#FFFFFFFF") +
     theme_bw() + 
     theme(axis.text = element_text(colour = 1, size = 18), axis.title.x = element_text(size = 22, vjust=-.2), axis.title.y = element_text(size = 22, vjust=0.3)) + 
     theme(legend.title=element_blank(), legend.text=element_text(colour = 1, size = 18), legend.position=c(1, 0), 
@@ -134,3 +138,63 @@ ggplot(data=result_df) +
     labs(x="N", y="Standard deviation") + scale_y_log10() + scale_x_log10() +
     scale_linetype_manual(name="", values=c("solid", "dotdash")) + scale_colour_manual(name="",values=c("blue", "black"))
 ggsave("sd_divergence_largetext.pdf", width = 7.755, height = 5.5)
+
+# paper style plots without prediction line (small text)
+plot_labels <- c("Data", "Artificial data", "Theoretical divergence")
+ggplot(data=result_df) + 
+    geom_line(aes(x=N, y=Mean.x, group=1, linetype=plot_labels[[1]], colour=plot_labels[[1]]), lwd=1) +            
+    geom_line(aes(x=N, y=Mean.y, group=2, linetype=plot_labels[[2]], colour=plot_labels[[2]]), lwd=1) +            
+    geom_ribbon(aes(x=N, ymin=Lower.x, ymax=Upper.x), fill="#0000BB33") +                                          
+    geom_ribbon(aes(x=N, ymin=Lower.y, ymax=Upper.y), fill="#00BB0011") +
+    geom_ribbon(aes(x=N, ymin=Upper.x, ymax=Upper.y), fill="#00BB0033") +
+    geom_ribbon(data=result_df[result_df$Upper.x <= result_df$Lower.y, ], aes(x=N, ymin=Upper.x, ymax=Lower.y), fill="#FFFFFFFF") +
+    theme_bw() +                                                                                                   
+    theme(axis.text = element_text(colour = 1, size = 12), axis.title.x = element_text(size = 15, vjust=-.2), axis.title.y = element_text(size = 15, vjust=0.3)) + 
+    theme(legend.title=element_blank(), legend.text=element_text(colour = 1, size = 12), legend.position=c(1, 0),   
+                    legend.background = element_rect(linetype = 1, size = 0.5, colour = 1), legend.key.size = unit(0.5, "cm"), legend.key.width = unit(1.8, "cm"), 
+                    legend.justification=c(1,0), aspect.ratio=1/1.41, panel.background = element_rect(colour = "black", size=0.5)) + 
+    labs(x="N", y="Standard deviation") + scale_y_log10() + scale_x_log10() +                                      
+    scale_linetype_manual(name="", values=c("dashed", "solid", "dotdash")) + scale_colour_manual(name="",values=c("green", "blue", "black")) 
+ggsave("sd_divergence_no_prediction_curve_incl_artificial_data.pdf", width = 7.755, height = 5.5)                            
+
+plot_labels <- c("Data", "Theoretical divergence")
+ggplot(data=result_df) + 
+    geom_line(aes(x=N, y=Mean.x, group=2, linetype=plot_labels[[1]], colour=plot_labels[[1]]), lwd=1) + 
+    geom_ribbon(aes(x=N, ymin=Lower.x, ymax=Upper.x), fill="#0000BB33") +
+    theme_bw() + 
+    theme(axis.text = element_text(colour = 1, size = 12), axis.title.x = element_text(size = 15, vjust=-.2), axis.title.y = element_text(size = 15, vjust=0.3)) + 
+    theme(legend.title=element_blank(), legend.text=element_text(colour = 1, size = 12), legend.position=c(1, 0), 
+                    legend.background = element_rect(linetype = 1, size = 0.5, colour = 1), legend.key.size = unit(0.5, "cm"), legend.key.width = unit(1.8, "cm"), 
+                    legend.justification=c(1,0), aspect.ratio=1/1.41, panel.background = element_rect(colour = "black", size=0.5)) +
+    labs(x="N", y="Standard deviation") + scale_y_log10() + scale_x_log10() +
+    scale_linetype_manual(name="", values=c("solid", "dotdash")) + scale_colour_manual(name="",values=c("blue", "black"))
+ggsave("sd_divergence_no_prediction_curve.pdf", width = 7.755, height = 5.5)
+
+# presentation style plots without prediction line (large text)
+plot_labels <- c("Data", "Artificial data", "Theoretical divergence")
+ggplot(data=result_df) + 
+    geom_line(aes(x=N, y=Mean.x, group=1, linetype=plot_labels[[1]], colour=plot_labels[[1]]), lwd=1) + 
+    geom_line(aes(x=N, y=Mean.y, group=2, linetype=plot_labels[[2]], colour=plot_labels[[2]]), lwd=1) + 
+    geom_ribbon(aes(x=N, ymin=Lower.x, ymax=Upper.x), fill="#0000BB33") +
+    geom_ribbon(aes(x=N, ymin=Lower.y, ymax=Upper.y), fill="#00BB0011") +
+    geom_ribbon(aes(x=N, ymin=Upper.x, ymax=Upper.y), fill="#00BB0033") +
+    geom_ribbon(data=result_df[result_df$Upper.x <= result_df$Lower.y, ], aes(x=N, ymin=Upper.x, ymax=Lower.y), fill="#FFFFFFFF") +
+    theme_bw() + 
+    theme(axis.text = element_text(colour = 1, size = 18), axis.title.x = element_text(size = 22, vjust=-.2), axis.title.y = element_text(size = 22, vjust=0.3)) + 
+    theme(legend.title=element_blank(), legend.text=element_text(colour = 1, size = 18), legend.position=c(1, 0), 
+                    legend.background = element_rect(linetype = 1, size = 0.5, colour = 1), legend.key.size = unit(0.5, "cm"), legend.key.width = unit(1.8, "cm"), 
+                    legend.justification=c(1,0), aspect.ratio=1/1.41, panel.background = element_rect(colour = "black", size=0.5)) +
+    labs(x="N", y="Standard deviation") + scale_y_log10() + scale_x_log10() +
+    scale_linetype_manual(name="", values=c("dashed", "solid", "dotdash")) + scale_colour_manual(name="",values=c("green", "blue", "black"))
+ggsave("sd_divergence_largetext_no_prediction_curve_incl_artificial_data.pdf", width = 7.755, height = 5.5)
+
+plot_labels <- c("Data", "Theoretical divergence")
+ggplot(data=result_df) + 
+    geom_line(aes(x=N, y=Mean.x, group=2, linetype=plot_labels[[1]], colour=plot_labels[[1]]), lwd=1) + 
+    geom_ribbon(aes(x=N, ymin=Lower.x, ymax=Upper.x), fill="#0000BB33") +
+    theme_bw() + 
+    theme(axis.text = element_text(colour = 1, size = 18), axis.title.x = element_text(size = 22, vjust=-.2), axis.title.y = element_text(size = 22, vjust=0.3)) + 
+    theme(legend.position="none") +
+    labs(x="N", y="Standard deviation") + scale_y_log10() + scale_x_log10() +
+    scale_linetype_manual(name="", values=c("solid", "dotdash")) + scale_colour_manual(name="",values=c("blue", "black"))
+ggsave("sd_divergence_largetext_no_prediction_curve.pdf", width = 7.755, height = 5.5)

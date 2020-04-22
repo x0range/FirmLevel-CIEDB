@@ -28,9 +28,9 @@ parse_result_list <- function(lst, fit_Variable, separator_Variable) {
 
 df3 <- data.frame(Fit_Variable=character(), Separator_Variable=character(), Year=integer(), Class=character(), class_idx=integer(), year_idx=integer(), Observations=integer(), Levy_alpha=double(), Levy_beta=double(), Levy_gamma=double(), Levy_delta=double(), Levy_Soofi_ID=double(), AEP_xi=double(), AEP_alpha=double(), AEP_kappa=double(), AEP_h=double(), AEP_Soofi_ID=double(), stringsAsFactors=FALSE)
 
-file_Name_List <- c("Figures/China_fit_results_prov.Rda", "Figures/China_fit_results_sect.Rda", "Figures/China_fit_results_size.Rda", "Figures/China_fit_results_type.Rda", "Figures/China_fit_results_year.Rda")
+file_Name_List <- c("Figures/China_fit_results_prov.Rda", "Figures/China_fit_results_sect.Rda", "Figures/China_fit_results_size.Rda", "Figures/China_fit_results_type.Rda", "Figures/China_fit_results_year.Rda", "Figures/China_fit_results_sect_ISICR4.Rda")
     
-separator_Variables <- c("Province", "Sector", "Size", "FirmType", "Year")
+separator_Variables <- c("Province", "Sector", "Size", "FirmType", "Year", "Sector.ISICR4")
 
 variable_List <- c("fit_results_year_LIM", "fit_results_year_LPR", "fit_results_year_LPG", "fit_results_year_LPL", "fit_results_year_LPD", "fit_results_year_LPI", "fit_results_year_TFP", "fit_results_year_ROC", "fit_results_year_IRT")
 
@@ -61,4 +61,6 @@ for (j in 1:length(file_Name_List)) {
     }
 }
 
-save(df3, file="China_fit_results_dataframe.Rda")
+setwd("~/datalake/CIEDB_2009_2013/")
+save(df3, file="06_China_fit_results_dataframe.Rda")
+#save(df3, file="China_fit_results_dataframe.Rda")

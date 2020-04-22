@@ -174,18 +174,20 @@ fun_data_clean <- function(data_c){
            def_CP_IO_g = (def_CP_IO - lag(def_CP_IO,1))/lag(def_CP_IO,1),   # capital productivity deflated
            def_LP_IO_g = (def_LP_IO - lag(def_LP_IO,1))/lag(def_LP_IO,1),   # labor productivity deflated
            TFP_IO_g = (TFP_IO - lag(TFP_IO,1))/lag(TFP_IO,1),                 # TFP undeflated
-           def_TFP_IO_g = (def_TFP_IO - lag(def_TFP_IO,1))/lag(def_TFP_IO,1)      # TFP deflated (both capital and labor productivity)
+           def_TFP_IO_g = (def_TFP_IO - lag(def_TFP_IO,1))/lag(def_TFP_IO,1),      # TFP deflated (both capital and labor productivity)
            
-           ) #%>% # G_CP
+           def_VA_g = (def_VA - lag(def_VA,1))/lag(def_VA,1),
+           def_VA_IO_g = (def_VA_IO - lag(def_VA_IO,1))/lag(def_VA_IO,1)
+    ) #%>% # G_CP
     
   # etc
     
   print("Part D")
   data_c <- data_c %>%
 
-    mutate(def_FIAS_g_diff = def_FIAS_g - lag(def_FIAS_g,1)     # investment rate change
-    mutate(PW_g = (PW - lag(PW,1))/lag(PW,1)) %>%               #
-    mutate(PW_AD_g = (PW_AD - lag(PW_AD,1))/lag(PW_AD,1))       #
+    mutate(def_FIAS_g_diff = def_FIAS_g - lag(def_FIAS_g,1),    # investment rate change
+           PW_g = (PW - lag(PW,1))/lag(PW,1),                   #
+           PW_AD_g = (PW_AD - lag(PW_AD,1))/lag(PW_AD,1))       #
 
   # log returns
   
@@ -238,7 +240,8 @@ fun_data_clean <- function(data_c){
   print("Part F")
   data_c <- data_c %>%
     # first difference variables
-    mutate(CP_diff = CP - lag(CP,1),
+    mutate(Employment_diff = Employment - lag(Employment, 1),
+           CP_diff = CP - lag(CP,1),
            CP_AD_diff = CP_AD - lag(CP_AD,1),                   # capital productivity undeflated
            LP_diff = LP - lag(LP,1),
            LP_AD_diff = LP_AD - lag(LP_AD,1),                   # labor productivity undeflated
@@ -258,7 +261,10 @@ fun_data_clean <- function(data_c){
            def_CP_IO_diff = def_CP_IO - lag(def_CP_IO,1),       # capital productivity deflated
            def_LP_IO_diff = def_LP_IO - lag(def_LP_IO,1),       # labor productivity deflated
            TFP_IO_diff = TFP_IO - lag(TFP_IO, 1),               # TFP undeflated
-           def_TFP_IO_diff = def_TFP_IO - lag(def_TFP_IO, 1)    # TFP deflated 
+           def_TFP_IO_diff = def_TFP_IO - lag(def_TFP_IO, 1),    # TFP deflated 
+           
+           def_VA_diff = def_VA - lag(def_VA,1),
+           def_VA_IO_diff = def_VA_IO - lag(def_VA_IO,1)
            ) 
 
   print("Part G")

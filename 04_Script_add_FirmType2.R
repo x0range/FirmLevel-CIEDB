@@ -7,7 +7,8 @@ function_set_FirmType2 <- function(df, FT_numbers, FT2_name) {
 }
 
 
-setwd("/home/mercury/dat/CIEDB_2009_2013/")
+#setwd("/home/mercury/dat/CIEDB_2009_2013/")
+setwd("~/datalake/CIEDB_2009_2013/")
 load("China_data_set_incl_compounds.Rda", verbose=T)
 df$FirmType2 <- NA
 

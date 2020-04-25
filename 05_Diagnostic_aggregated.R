@@ -2,7 +2,9 @@
 if (!'pacman' %in% installed.packages()[,'Package']) install.packages('pacman', repos='http://cran.r-project.org')
 pacman::p_load(dplyr,RColorBrewer,colorspace,knitr,tidyr,devtools)
 
+setwd("~/eecon/git/Amadeus-Datawork")
 devtools::load_all("fittinglevy")
+setwd("~/datalake/CIEDB_2009_2013/")
 
 #load("China_data_set_incl_compounds.Rda")   # loads df
 load("dataframe_including_FirmType2.Rda")   # loads df
@@ -12,7 +14,9 @@ country_names = c("PR China")
 names(df)
 
   df_cut <- df %>% 
-    select(ID, Year, Sector.Short, Province, Province.Code, FirmType2, Employment, Employment_g, def_LP_IO,  def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_g, def_RoC_G_FI, def_VA, def_VA_IO, def_FIAS_g, def_TFP_IO_diff) %>%     # exchanged FirmType for FirmType2
+    select(ID, Year, Sector.Short, Province, Province.Code, FirmType2, Employment, Employment_g, def_LP_IO,  def_LP_IO_g, 
+           def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_g, def_RoC_G_FI, def_VA, def_VA_IO, def_FIAS_g, def_TFP_IO_diff,
+           def_VA_diff, def_VA_g, Employment, Employment_diff, Employment_g) %>%     # exchanged FirmType for FirmType2
     filter(Employment > 0) %>% # Size index
     mutate(COMPCAT = ifelse((Employment >= 0 & Employment < 50), 1, 
                              ifelse((Employment >= 50 & Employment < 250), 2,
@@ -175,7 +179,9 @@ fun_plot_marginal <- function(pdf_name, title, cond_name, var_name, x_lab, c_nam
   par(mfrow=c(1,1), mar=c(3, 2.5, 1, 1), mgp=c(1.5,.3,0), tck=-.01, oma=c(0,0,2,0))
 
   dd <- df_cut %>%
-    select(ID, Year, COMPCAT, Sector.Short, Province, Province.Code, FirmType2, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_RoC_G_FI, def_FIAS_g) 
+    select(ID, Year, COMPCAT, Sector.Short, Province, Province.Code, FirmType2, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, 
+           def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_RoC_G_FI, def_FIAS_g, Employment, Employment_g, Employment_diff, 
+           def_VA_diff, def_VA, def_VA_g) 
 
   var_ind <- match(var_name, colnames(dd))
   cond_ind <- match(cond_name, colnames(dd))
@@ -255,6 +261,19 @@ pov_cut <- 0.995
 ## cross-sectional plots of LP and LP\_change (country-year)
 
 setwd("./Figures/")
+
+############ Additional plots
+year_name <- unique(df_cut$Year)
+
+fun_plot_marginal(pdf_name = "Figure_Country_Year_VA_IHateMyLife", title = "Log Density of Value Added by Year", cond_name = "Year", var_name = "def_VA", x_lab = "VA", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_VA_Diff_IHateMyLife", title = "Log Density of Value Added Change by Year", cond_name = "Year", var_name = "def_VA_diff", x_lab = "VA Change", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_VA_Growth_IHateMyLife", title = "Log Density of Value Added Growth by Year", cond_name = "Year", var_name = "def_VA_g", x_lab = "VA Growth (%)", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_EMPL_IHateMyLife", title = "Log Density of Employment by Year", cond_name = "Year", var_name = "Employment", x_lab = "Employment", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_EMPL_Diff_IHateMyLife", title = "Log Density of Employment Change by Year", cond_name = "Year", var_name = "Employment_diff", x_lab = "Employment Change", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+fun_plot_marginal(pdf_name = "Figure_Country_Year_EMPL_Growth_IHateMyLife", title = "Log Density of Employment Growth by Year", cond_name = "Year", var_name = "Employment_g", x_lab = "Employment Growth (%)", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+############ End Additional plots
+
 
 
 fun_plot_marginal(pdf_name = "Figure_Country_Year_LP", title = "Log Density of Labor Productivty by Year", cond_name = "Year", var_name = "def_LP_IO", x_lab = "LP", c_names = Size_p$Year, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)

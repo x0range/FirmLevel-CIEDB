@@ -1,5 +1,5 @@
 library(pacman)
-pacman::p_load(dplyr, reshape2, ggplot2, directlabels)
+pacman::p_load(dplyr, reshape2, ggplot2, directlabels, foreign)
 
 
 sector_year_cast <- function(sectoral_df, var="nHHI_TOAS", columns_restriction=c()) {
@@ -17,8 +17,11 @@ sector_year_cast <- function(sectoral_df, var="nHHI_TOAS", columns_restriction=c
   return(list("wide"=wide, "long"=long))
 }
 
-plot_sectoral_dev <- function(df, var, label, filename_infix="", logscale=F, columns_restriction=c()) {
+plot_sectoral_dev <- function(df, var, label, filename_infix="", logscale=F, columns_restriction=c(), xlim=NA, breaks=NA, shaded=NA) {
   long_df = sector_year_cast(df, var, columns_restriction=columns_restriction)$long
+  if (!is.na(xlim)) {
+    long_df$Year <- as.numeric(as.character(long_df$Year))
+  }
   the_plot <- ggplot(long_df, aes(x=Year, y=value, group=Sector, color=Sector)) + 
     theme_bw() +
     theme(axis.text = element_text(size=16), axis.title=element_text(size=18)) +
@@ -30,6 +33,19 @@ plot_sectoral_dev <- function(df, var, label, filename_infix="", logscale=F, col
   if (logscale) {
     the_plot <- the_plot +
       scale_y_continuous(trans='log10')
+  }
+  if (!is.na(xlim)) {
+    if (!is.na(breaks)) {
+      the_plot <- the_plot +
+        scale_x_continuous(limits=c(xlim[[1]], xlim[[2]]), breaks=breaks)
+    } else {
+      the_plot <- the_plot +
+        scale_x_continuous(limits=c(xlim[[1]], xlim[[2]]))
+    }
+    if (!is.na(shaded)) {
+      the_plot <- the_plot +
+        annotate("rect", xmin = shaded[[1]], xmax = shaded[[2]], ymin = -Inf, ymax = Inf, fill="blue", alpha = .1)
+    }
   }
   print(the_plot)
   big = ifelse(length(columns_restriction)>0,"_BG","")
@@ -182,3 +198,45 @@ load(file="08_data_complete_panels_annualized.Rda", verbose=T)  # df
 
 computations_by_sector_scheme(df, sector_scheme="GB2002")
 computations_by_sector_scheme(df, sector_scheme="ISICR4")
+
+
+load("08_macro_data.Rda", verbose=T)  # df, sector_description
+df$Sector.Short <- df$code
+big_ISIC_MACRO = c("A01", "B", "C10-C12", "C13-C15", "C20", "C24", "C26", "C28", "D35", "F", "G46", "H49", "K64", "L68", "O84", "P85")
+big_ISIC_CIEDB = c("B", "C10-C12", "C13-C15", "C20", "C22", "C23", "C24", "C25", "C28", "C29", "C30", "D35")
+plot_sectoral_dev(df, "Employment_share", "Employment share", filename_infix="MACRO", logscale=T, columns_restriction=big_ISIC_MACRO, xlim=c(1999, 2015))
+plot_sectoral_dev(df, "Employment_share", "Employment share", filename_infix="MACRO_IND", logscale=F, columns_restriction=big_ISIC_CIEDB)
+plot_sectoral_dev(df, "VA_share", "Value added share", filename_infix="MACRO", logscale=T, columns_restriction=big_ISIC_MACRO, xlim=c(1999, 2015))
+plot_sectoral_dev(df, "VA_share", "Value added share", filename_infix="MACRO_IND", logscale=F, columns_restriction=big_ISIC_CIEDB)
+
+df_holz <- read.csv2("Holz_appendix_6_table_revision_2004.csv", sep=",", stringsAsFactors=F)
+df_holz <- df_holz %>%
+  mutate(A = as.numeric(Primary) / as.numeric(GDP),
+         B_C_D_E = as.numeric(Secondary.Industry) / as.numeric(GDP),
+         F = as.numeric(Secondary.Construction) / as.numeric(GDP),
+         G_I = as.numeric(Tertiary.transportation.and.communication) / as.numeric(GDP),
+         H_J = as.numeric(Tertiary.commerce.and.catering) / as.numeric(GDP),
+         "K-U" = as.numeric(Tertiary.other) / as.numeric(GDP)
+         ) %>%
+  select(Year, A, B_C_D_E, F, G_I, H_J, "K-U")
+
+df_VA <- dcast(df, Year~Sector.Short, value.var="VA_share")
+df_VA <- df_VA %>%
+  mutate(A = A01 + A02 + A03,
+         B_C_D_E = B + `C10-C12` + `C13-C15` + C16 + C17 + C18 + C19 + C20 + C21 + C22 + C23 + C24 + C25 + C26 + C27 + C28 + C29 + C30 + C31_C32 + C33 + D35 + E36 + `E37-E39`,
+         F = F,
+         G_I = G45 + G46 + G47 + I,
+         H_J = H49 + H50 + H51 + H52 + H53 + J58 + J59_J60 + J61 + J62_J63,
+         "K-U" = K64 + K65 + K66 + L68 + M69_M70 + M71 + M72 + M73 + M74_M75 + N + O84 + P85 + Q + R_S + T + U
+  ) %>%
+  select(Year, A, B_C_D_E, F, G_I, H_J, "K-U")
+
+df_holz_short <- df_holz %>%
+  filter(Year<2000)
+
+df_VA_longtime <- rbind(df_holz_short, df_VA)
+colnames(df_VA_longtime) <- c("Year", "Primary", "Industry", "Construction", "Trade/Cater.", "Comm./Transp.", "Misc. Services")
+df_VA_longtime_long <- melt(df_VA_longtime)
+colnames(df_VA_longtime_long) <- c("Year", "Sector.Short", "VA_share")
+plot_sectoral_dev(df_VA_longtime_long, "VA_share", "Value added share", filename_infix="LONGTERM", logscale=F, xlim=c(1942, 2025), 
+                  breaks=c(1950, 1965, 1980, 1995, 2010), shaded=c(1998, 2014))

@@ -7,16 +7,18 @@ load(file="08_data_complete_panels_annualized.Rda", verbose=T) # df
 reduced_df <- df %>% 
   ungroup() %>%
   select(Employment_diff_ann, def_VA_diff_ann, def_VA_IO_diff_ann, 
-         def_FIAS_diff_ann, def_TOAS_diff_ann, def_LP_diff_ann, 
-         def_LP_IO_diff_ann, def_Sales_diff_ann, def_Wages_pc_diff_ann, 
-         def_Wages_diff_ann, WS_diff_ann, WS_IO_diff_ann)
+         def_FIAS_diff_ann, def_TOAS_diff_ann, def_LP_IO_diff_ann, 
+         def_LP_diff_ann, def_Sales_diff_ann, def_Wages_pc_diff_ann, 
+         def_Wages_diff_ann, WS_IO_diff_ann, WS_diff_ann, 
+         def_Capital_intensity_diff_ann, def_Investment_rate_diff_ann, 
+         def_Wages)
 
 reduced_df <- do.call(data.frame,lapply(reduced_df, function(x) replace(x, is.infinite(x),NA)))
 
-colnames(reduced_df) <- c("Employment", "Output (Y)", "VA", "Fixed Cap.", "Total Cap.", "LP (Y)", 
-                      "LP (VA)", "Revenue", "Wages pc", "Wage Bill", "Wages/Y", 
-                      "Wages/VA")
-cormat <- round(cor(reduced_df, use="complete.obs"),3)
+colnames(reduced_df) <- c("Employment", "Value added (imputed)", "Value added", "Fixed capital", "Total Capital", "Labor productivity", 
+                      "Labor prod. (imputed)", "Revenue", "Wages pc", "Wage bill", "Wages/VA", 
+                      "Wages/VA (imputed)", "Capital intensity", "Investment rate", "Wage (level)")
+cormat <- round(cor(reduced_df, use="pairwise.complete.obs"),2)
 upper_tri <- cormat
 upper_tri[lower.tri(upper_tri)]<- NA
 melted_cormat <- melt(upper_tri, na.rm = TRUE)
@@ -43,8 +45,9 @@ cor_heatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
   guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
                                title.position = "top", title.hjust = 0.5))
 
+print(cor_heatmap)
 ggsave("correlation_heatmap.pdf", plot = cor_heatmap)
 
 
-cor_coeff <- cor(df$Employment_diff_ann, df$def_VA_diff_ann, use="complete.obs")
-lm <- lm(Employment_diff_ann~def_VA_diff_ann, data=df)
+#cor_coeff <- cor(df$Employment_diff_ann, df$def_VA_diff_ann, use="complete.obs")
+#lm <- lm(Employment_diff_ann~def_VA_diff_ann, data=df)

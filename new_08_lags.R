@@ -186,6 +186,15 @@ df <- df %>%
 save(df, file="08_data_complete_panels.Rda")
 load(file="08_data_complete_panels.Rda", verbose=T) # df
 
+df <- df %>%
+  group_by(ID, Sector) %>%
+  mutate(def_Capital_intensity = def_TOAS / Employment,             # CI
+         def_Investment_rate = def_TOAS_g,                          # IR
+         
+         def_Capital_intensity_diff = def_Capital_intensity - dplyr::lag(def_Capital_intensity, 1),
+         def_Investment_rate_diff = def_Investment_rate - dplyr::lag(def_Investment_rate, 1),
+  )
+         
 
 df <- df %>% 
   mutate(Employment_diff_ann = Employment_diff/year_diff,            # N
@@ -200,6 +209,9 @@ df <- df %>%
          def_Wages_diff_ann = def_Wages_diff / year_diff,            # W
          WS_diff_ann = WS_diff / year_diff,                          # W/W+p
          WS_IO_diff_ann = WS_IO_diff / year_diff,                    # W/Y
+         
+         def_Capital_intensity_diff_ann = def_Capital_intensity_diff / year_diff,  # CI
+         def_Investment_rate_diff_ann = def_Investment_rate_diff / year_diff,      # IR
   
          Employment_g_ann = (Employment_g)**(1/year_diff),           # N
          def_VA_g_ann = (def_VA_g)**(1/year_diff),                   # Wages + Profit

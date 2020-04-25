@@ -1,6 +1,6 @@
 
 library(pacman)
-pacman::p_load(openxlsx, reshape2, ggplot2)
+pacman::p_load(openxlsx, reshape2, ggplot2, dplyr)
 
 
 #load("08_GB2002_ISICR4_table.Rda", verbose=T)  # GB2002_ISICR4
@@ -55,17 +55,24 @@ df <- MACRO_China %>%
   arrange(code, Year) %>%
   group_by(code) %>%
   mutate(
-    Employment_diff = EMP - lag(EMP, 1),
-    VA_diff = VA - lag(VA, 1),
-    LP_diff = LP - lag(LP, 1),
-    Employment_share_diff = Employment_share - lag(Employment_share, 1),
-    VA_share_diff = VA_share - lag(VA_share, 1),
+    K_diff = K - dplyr::lag(K, 1),
+    Employment_diff = EMP - dplyr::lag(EMP, 1),
+    VA_diff = VA - dplyr::lag(VA, 1),
+    LP_diff = LP - dplyr::lag(LP, 1),
+    Employment_share_diff = Employment_share - dplyr::lag(Employment_share, 1),
+    VA_share_diff = VA_share - dplyr::lag(VA_share, 1),
     
-    Employment_g = Employment_diff / lag(EMP, 1),
-    VA_g = VA_diff / lag(VA, 1),
-    Employment_share_g = Employment_share_diff / lag(Employment_share, 1),
-    VA_share_g = VA_share_diff / lag(VA_share, 1),
-  )
+    IR = K_diff / dplyr::lag(K, 1),
+    Employment_g = Employment_diff / dplyr::lag(EMP, 1),
+    VA_g = VA_diff / dplyr::lag(VA, 1),
+    Employment_share_g = Employment_share_diff / dplyr::lag(Employment_share, 1),
+    VA_share_g = VA_share_diff / dplyr::lag(VA_share, 1),
+    
+    Wage_per_output_quantity = Wages / VA_QI,
+    Capital_intensity = K / EMP,
+    VA_per_output_quantity = VA / VA_QI,
+  ) %>%
+  select(-c(K_diff))
 
 
 sector_dispersion <- df %>%

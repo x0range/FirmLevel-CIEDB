@@ -4,7 +4,7 @@ pacman::p_load(dplyr, tidyr, ggplot2, reshape2)
 
 correlation_heatmap <- function(df, heatmap_filename, textsize=4, digits=4) {
   
-  cormat <- round(cor(df, use="complete.obs"), digits)
+  cormat <- round(cor(df, use="pairwise.complete.obs"), digits)
   upper_tri <- cormat
   upper_tri[lower.tri(upper_tri)]<- NA
   melted_cormat <- melt(upper_tri, na.rm = TRUE)
@@ -55,12 +55,15 @@ load("09_ISICR4_sectoral_accounts.Rda", verbose=T) #sectoral
 
 # Macro data
 df <- df %>%
-  select(Year, code, EMP, VA, LP, K, GO, COMP, CAP, RoC, WS, Wages, VA_PI, VA_QI, Employment_g, VA_g, LP_diff)
+  select(Year, code, EMP, VA, LP, K, GO, COMP, CAP, RoC, WS, Wages, GO_PI, GO_QI, Employment_g, VA_g, LP_diff, II_PI,
+         IR, Wage_per_output_quantity, Capital_intensity, VA_per_output_quantity)
+
 
 df$Year <- as.numeric(as.character(df$Year))
 colnames(df) <- c("Year", "Sector", "Employment", "VA", "LP", "Capital", "Gross output", "Wage bill", "Returns", 
                   "Return on Capital",  "Wage share",  "Average wage", "Output price level", "Output quantity",
-                  "Employment growth WIOD", "VA growth WIOD", "LP Change WIOD")
+                  "Employment growth WIOD", "VA growth WIOD", "LP Change WIOD", "Input price level", "Investment rate", 
+                  "Wage / output quantity", "Capital intensity", "VA / output quantity")
 
 # Levy fits # pt 1
 
@@ -129,6 +132,28 @@ colnames(df_VA_s) <- c("Year", "Sector", "VA growth CIEDB")
 
 df_combined <- merge(df_combined, df_VA_s, by=c("Year", "Sector"), all=T)
 
+df_Fabricant <- df_combined %>%
+  select(c("Year", "Sector", "VA", "Capital", "Employment", "LP", "Wage share", "Investment rate", 
+           "Wage / output quantity", "Capital intensity", "VA / output quantity", "Average wage", 
+           "Output price level", "Input price level"))
+
+df_Fabricant_g <- df_Fabricant %>%
+  arrange(Sector, Year) %>%
+  group_by(Sector) %>%
+  #mutate_at(vars(-Sector, -Year, -`Average wage`, -`Output price level`, -`Input price level`), funs((. - dplyr::lag(., 1))/dplyr::lag(., 1))) %>%
+  mutate_at(vars(-Sector, -Year), funs((. - dplyr::lag(., 1))/dplyr::lag(., 1))) %>%
+  ungroup()
+
+df_Fabricant <- df_Fabricant %>% 
+  select(-c("Year", "Sector"))
+
+df_Fabricant_g <- df_Fabricant_g %>% 
+  select(-c("Year", "Sector"))
+
+
+df_combined <- df_combined %>%
+  select(-c("Input price level", "Investment rate", "Wage / output quantity", "Capital intensity", "VA / output quantity"))
+  
 df_combined2 <- df_combined %>% 
   select(-c("Year", "Sector"))
 
@@ -156,6 +181,14 @@ df_combined_fdiff_reduced <- df_combined_fdiff2 %>%
          `LP Levy delta`, `LP Change Levy alpha`, `LP Change Levy beta`, `LP Change Levy gamma`, nHHI, Entropy, 
          `Average Firm Age`)
 
+colnames(df_combined_fdiff_reduced) <- c("Employment", "Value added", "Labor productivity", "Capital", "Return on Capital", "Wage share", "Average wage", 
+                                         "Employment growth WIOD", "VA growth WIOD", "LP Change WIOD", "Investment rate Levy alpha", 
+                                         "Return on capital Levy alpha", "LP Levy alpha", "LP Levy delta", "LP Change Levy alpha", 
+                                         "LP Change Levy beta", "LP Change Levy gamma", "nHHI", "Entropy", "Average Firm Age")
+colnames(df_combined_reduced) <- c("Employment", "Value added", "Labor productivity", "Capital", "Return on Capital", "Wage share", "Average wage", 
+                                         "Employment growth WIOD", "VA growth WIOD", "LP Change WIOD", "Investment rate Levy alpha", 
+                                         "Return on capital Levy alpha", "LP Levy alpha", "LP Levy delta", "LP Change Levy alpha", 
+                                         "LP Change Levy beta", "LP Change Levy gamma", "nHHI", "Entropy", "Average Firm Age")
 correlation_heatmap(df_combined_reduced, heatmap_filename="correlation_heatmap_MACRO_reduced.pdf", digits=2, textsize=3)
 correlation_heatmap(df_combined_fdiff_reduced, heatmap_filename="correlation_heatmap_MACRO_fdiff_reduced.pdf", digits=2, textsize=3)
 
@@ -195,9 +228,12 @@ colnames(df_combined_reduced_macro_levy) <- c("Employment", "Value added", "Labo
 correlation_heatmap(df_combined_reduced_macro_levy, heatmap_filename="correlation_heatmap_MACRO_Levy.pdf", digits=2, textsize=4)
 correlation_heatmap(df_combined_fdiff_reduced_macro_levy, heatmap_filename="correlation_heatmap_MACRO_fdiff_Levy.pdf", digits=2, textsize=4)
 
+colnames(df_Fabricant) <- c("Value added", "Capital", "Employment", "Labor productivity", "Wage share", "Investment rate", 
+                            "Wage / output quantity", "Capital intensity", "VA / output quantity", "Average wage", 
+                            "Output price level", "Input price level")
+colnames(df_Fabricant_g) <- c("Value added", "Capital", "Employment", "Labor productivity", "Wage share", "Investment rate", 
+                            "Wage / output quantity", "Capital intensity", "VA / output quantity", "Average wage", 
+                            "Output price level", "Input price level")
 
-
-
-
-
-
+correlation_heatmap(df_Fabricant, heatmap_filename="correlation_heatmap_MACRO_Fabricant_l.pdf", digits=2, textsize=4)
+correlation_heatmap(df_Fabricant_g, heatmap_filename="correlation_heatmap_MACRO_Fabricant_g.pdf", digits=2, textsize=4)

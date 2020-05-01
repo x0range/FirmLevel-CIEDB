@@ -14,7 +14,7 @@ country_names = c("PR China")
 names(df)
 
   df_cut <- df %>% 
-    select(ID, Year, Sector.Short, Province, Province.Code, FirmType2, Employment, Employment_g, def_LP_IO,  def_LP_IO_g, 
+    select(ID, Year, Sector.Short, Province, Province.Code, FirmType2, Employment, Employment_g, def_LP, def_LP_IO,  def_LP_IO_g, 
            def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_g, def_RoC_G_FI, def_VA, def_VA_IO, def_FIAS_g, def_TFP_IO_diff,
            def_VA_diff, def_VA_g, Employment, Employment_diff, Employment_g) %>%     # exchanged FirmType for FirmType2
     filter(Employment > 0) %>% # Size index
@@ -179,7 +179,7 @@ fun_plot_marginal <- function(pdf_name, title, cond_name, var_name, x_lab, c_nam
   par(mfrow=c(1,1), mar=c(3, 2.5, 1, 1), mgp=c(1.5,.3,0), tck=-.01, oma=c(0,0,2,0))
 
   dd <- df_cut %>%
-    select(ID, Year, COMPCAT, Sector.Short, Province, Province.Code, FirmType2, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, 
+    select(ID, Year, COMPCAT, Sector.Short, Province, Province.Code, FirmType2, def_LP, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, 
            def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_RoC_G_FI, def_FIAS_g, Employment, Employment_g, Employment_diff, 
            def_VA_diff, def_VA, def_VA_g) 
 
@@ -272,6 +272,19 @@ fun_plot_marginal(pdf_name = "Figure_Country_Year_EMPL_IHateMyLife", title = "Lo
 fun_plot_marginal(pdf_name = "Figure_Country_Year_EMPL_Diff_IHateMyLife", title = "Log Density of Employment Change by Year", cond_name = "Year", var_name = "Employment_diff", x_lab = "Employment Change", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 fun_plot_marginal(pdf_name = "Figure_Country_Year_EMPL_Growth_IHateMyLife", title = "Log Density of Employment Growth by Year", cond_name = "Year", var_name = "Employment_g", x_lab = "Employment Growth (%)", c_names = year_name, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
+library(finity)
+
+for (i in 1:4) {
+  res_char = as.character(i)
+  signif_char = ""
+  for (var in c("def_VA", "def_VA_diff", "def_VA_g", "Employment", "Employment_diff", "Employment_g", "def_LP", "def_LP_diff")) {
+    res <- finity::finite_moment_test(unlist(df_cut[,var]), i, ignore_errors = T)
+    res_char <- paste(res_char, as.character(round(res[[1]], 2)), sep=" & ")
+    signif_char <- paste(signif_char, as.character(round(res[[2]], 2)), sep=" & ")
+  }
+  message(paste(res_char, "\\"))
+  message(paste(signif_char, "\\"))
+}
 ############ End Additional plots
 
 

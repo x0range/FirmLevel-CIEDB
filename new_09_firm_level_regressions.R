@@ -50,12 +50,124 @@ df <- df %>%
 #df2 <- df[which(is.finite(df$Employment_g_ann)),]
 df3 <- do.call(data.frame,lapply(df, function(x) replace(x, is.infinite(x),NA)))
 
+### OLS regressions
+
+va_ols050 <- lm(def_VA_g_ann ~ Sector_VA_g, 
+                data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(va_ols050)")
+print(summary(va_ols050))
+
+va_ols051 <- lm(def_VA_g_ann ~ Sector_VA_g + def_LP + def_LP_diff + Firm.Age, 
+                data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(va_ols051)")
+print(summary(va_ols051))
+
+va_ols052 <- lm(def_VA_g_ann ~ Sector_VA_g + def_LP + def_LP_diff + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year), 
+                data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(va_ols052)")
+print(summary(va_ols052))
+
+va_ols053 <- lm(def_VA_g_ann ~ Sector_VA_g + def_LP + def_LP_diff + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year)  + factor(Sector.ISICR4), 
+                data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(va_ols053)")
+print(summary(va_ols053))
+
+e_ols050 <- lm(Employment_g_ann ~ Sector_Employment_g, 
+               data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(e_ols050)")
+print(summary(e_ols050))
+
+e_ols051 <- lm(Employment_g_ann ~ Sector_Employment_g + def_LP + def_LP_diff + Firm.Age, 
+               data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(e_ols051)")
+print(summary(e_ols051))
+
+e_ols052 <- lm(Employment_g_ann ~ Sector_Employment_g + def_LP + def_LP_diff + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year), 
+               data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(e_ols052)")
+print(summary(e_ols052))
+
+e_ols053 <- lm(Employment_g_ann ~ Sector_Employment_g + def_LP + def_LP_diff + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year)  + factor(Sector.ISICR4), 
+               data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(e_ols053)")
+print(summary(e_ols053))
+
+
+finiteness_va_ols_050 <- finity::finite_moment_test(va_ols050$residuals, 2., ignore_errors = T, psi=1.)
+print(finiteness_va_ols_050)
+finiteness_va_ols_051 <- finity::finite_moment_test(va_ols051$residuals, 2., ignore_errors = T, psi=1.)
+print(finiteness_va_ols_051)
+finiteness_va_ols_052 <- finity::finite_moment_test(va_ols052$residuals, 2., ignore_errors = T, psi=1.)
+print(finiteness_va_ols_052)
+finiteness_va_ols_053 <- finity::finite_moment_test(va_ols053$residuals, 2., ignore_errors = T, psi=1.)
+print(finiteness_va_ols_053)
+
+finiteness_e_ols_050 <- finity::finite_moment_test(e_ols050$residuals, 2., ignore_errors = T, psi=1.)
+print(finiteness_e_ols_050)
+finiteness_e_ols_051 <- finity::finite_moment_test(e_ols051$residuals, 2., ignore_errors = T, psi=1.)
+print(finiteness_e_ols_051)
+finiteness_e_ols_052 <- finity::finite_moment_test(e_ols052$residuals, 2., ignore_errors = T, psi=1.)
+print(finiteness_e_ols_052)
+finiteness_e_ols_053 <- finity::finite_moment_test(e_ols053$residuals, 2., ignore_errors = T, psi=1.)
+print(finiteness_e_ols_053)
+
+
+### Robust regressions
+
+va_lm050 <- heavy::heavyLm(def_VA_g_ann ~ Sector_VA_g, 
+                           data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(va_lm050)")
+print(summary(va_lm050))
+
+va_lm051 <- heavy::heavyLm(def_VA_g_ann ~ Sector_VA_g + def_LP + def_LP_diff + Firm.Age, 
+                           data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(va_lm051)")
+print(summary(va_lm051))
+
+va_lm052 <- heavy::heavyLm(def_VA_g_ann ~ Sector_VA_g + def_LP + def_LP_diff + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year), 
+                           data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(va_lm052)")
+print(summary(va_lm052))
+
+va_lm053 <- heavy::heavyLm(def_VA_g_ann ~ Sector_VA_g + def_LP + def_LP_diff + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year)  + factor(Sector.ISICR4), 
+                           data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(va_lm053)")
+print(summary(va_lm053))
+
+
+e_lm050 <- heavy::heavyLm(Employment_g_ann ~ Sector_Employment_g, 
+                          data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(e_lm050)")
+print(summary(e_lm050))
+
+e_lm051 <- heavy::heavyLm(Employment_g_ann ~ Sector_Employment_g + def_LP + def_LP_diff + Firm.Age, 
+                          data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(e_lm051)")
+print(summary(e_lm051))
+
+e_lm052 <- heavy::heavyLm(Employment_g_ann ~ Sector_Employment_g + def_LP + def_LP_diff + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year), 
+                          data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(e_lm052)")
+print(summary(e_lm052))
+
+e_lm053 <- heavy::heavyLm(Employment_g_ann ~ Sector_Employment_g + def_LP + def_LP_diff + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year)  + factor(Sector.ISICR4), 
+                          data=df3, na.action = na.exclude, family=Cauchy())
+print("summary(e_lm053)")
+print(summary(e_lm053))
 
 
 
+if (F) {
+  va_lm054 <- heavy::heavyLm(def_VA_g_ann ~ Sector_VA_g + def_LP + Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year)  + factor(Sector.ISICR4), 
+                             data=df3, na.action = na.exclude, family=Cauchy())
+  print("summary(va_lm054)")
+  print(summary(va_lm054))
+  
+}
 
 
-### Most recent set of heavylm regressions
+
+### Previous set of heavylm regressions
 
 if (F) {
   
@@ -96,7 +208,7 @@ if (F) {
 }
 
 
-# most recen set of lm ols regressions
+# Previous set of lm ols regressions
 
 if (F) {
   va_ols024 <- lm(def_VA_g_ann ~ Sector_VA_g + def_LP*def_LP_diff*Firm.Age + factor(FirmType2) + factor(Firm.Size) + factor(Province) + factor(Year)  + factor(Sector.ISICR4), 

@@ -1,6 +1,6 @@
 
 library(pacman)
-pacman::p_load(openxlsx, reshape2, ggplot2, dplyr)
+pacman::p_load(openxlsx, reshape2, ggplot2, dplyr, ggrepel)
 
 
 #load("08_GB2002_ISICR4_table.Rda", verbose=T)  # GB2002_ISICR4
@@ -101,8 +101,17 @@ sector_growth <- df %>%
     N = n(),
     E_diff = last(Employment_share)-first(Employment_share),
     VA_diff = last(VA_share) - first(VA_share),
+    E_abs_diff = last(EMP)-first(EMP),
+    VA_abs_diff = last(VA) - first(VA),
+    LP_diff = sum(LP_diff, na.rm=T),
     E_g = E_diff/first(Employment_share),
     VA_g = VA_diff/first(VA_share),
+    E_abs_g = E_abs_diff/first(EMP),
+    VA_abs_g = VA_abs_diff/first(VA),
+    LP_g = LP_diff / dplyr::first(LP)
+  ) %>%
+  mutate(
+    LP_diff = ifelse(LP_diff==0&(!is.finite(LP_g)), NA, LP_diff)
   )
 
 save(df, sector_description, file="08_macro_data.Rda")
@@ -149,7 +158,7 @@ plot_sectoral_dev <- function(plot_data, var1, var2, var1_label, var2_label, xli
   the_plot <- ggplot() + 
     labs(x=var1_label, y=var2_label) +
     theme_bw() +
-    theme(axis.text = element_text(size=16), axis.title=element_text(size=18), legend.position = "none") +
+    theme(axis.text = element_text(size=16), axis.title=element_text(size=18), legend.position = "none", aspect.ratio=5/7) +
     geom_point(data=plot_data, aes(x=get(var1), y=get(var2), color=code)) +
     geom_text_repel(data=plot_data, aes(x=get(var1), y=get(var2), label=code, color=code), cex=7) +
     xlim(xlim[[1]], xlim[[2]]) + ylim(ylim[[1]], ylim[[2]])
@@ -164,3 +173,23 @@ plot_sectoral_dev(var1 = "VA_g", var2 = "E_g", var1_label = "Value added share g
 plot_sectoral_dev(var1 = "VA_diff", var2 = "E_diff", var1_label = "Value added share change", var2_label = "Employment share change",
                   plot_data = sector_growth, plot_file_name = "08_sectoral_total_change.pdf",
                   xlim=c(-.02,.025), ylim=c(-.01,.04))
+plot_sectoral_dev(var1 = "VA_abs_g", var2 = "LP_g", var1_label = "Value added growth", var2_label = "Labor productivity growth",
+                  plot_data = sector_growth, plot_file_name = "08_sectoral_total_va_lp_growth_rates.pdf",
+                  xlim=c(-.5,15.5), ylim=c(-.5,7.))
+plot_sectoral_dev(var1 = "E_abs_g", var2 = "LP_g", var1_label = "Employment growth", var2_label = "Labor productivity growth",
+                  plot_data = sector_growth, plot_file_name = "08_sectoral_total_e_lp_growth_rates.pdf",
+                  xlim=c(-1,5), ylim=c(-.5,7.))
+
+sector_growth_ind <- sector_growth %>%
+  filter(grepl("B",code)|grepl("C",code)|grepl("D",code)|grepl("E",code))
+
+sector_growth_nind <- sector_growth %>%
+  filter(!(grepl("B",code)|grepl("C",code)|grepl("D",code)|grepl("E",code)))
+sector_growth_nind$LP_g <- sector_growth_nind$LP_g + 10000
+
+sector_growth_nind_masked <- rbind(sector_growth_ind, sector_growth_nind) %>% arrange(code)
+
+
+plot_sectoral_dev(var1 = "VA_abs_g", var2 = "LP_g", var1_label = "Value added growth", var2_label = "Labor productivity growth",
+                  plot_data = sector_growth_nind_masked, plot_file_name = "08_sectoral_total_va_lp_ind_growth_rates.pdf",
+                  xlim=c(-.5,15.5), ylim=c(-.5,7.))

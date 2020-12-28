@@ -18,8 +18,8 @@ names(df)
     ungroup() %>% 
     select(ID, Year, Sector.Short, Province, Province.Code, FirmType2, Employment, Employment_g, def_LP_IO,  def_LP_IO_g, 
            def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_g, def_RoC_G_FI, def_VA, def_VA_IO, def_FIAS_g, 
-           def_TFP_IO_diff) %>% #, Employment_diff, Employment_g, def_VA_diff, def_VA_IO_diff, def_VA_g, def_VA_IO_g) %>%     # exchanged FirmType for FirmType2
-#           def_TFP_IO_diff, Employment_diff, Employment_g, def_VA_diff, def_VA_IO_diff, def_VA_g, def_VA_IO_g) %>%     # exchanged FirmType for FirmType2
+           def_TFP_IO_diff, Employment_diff, Employment_g, def_VA_diff, def_VA_IO_diff, def_VA_g, def_VA_IO_g) %>%     # exchanged FirmType for FirmType2
+#           def_TFP_IO_diff) %>% #, Employment_diff, Employment_g, def_VA_diff, def_VA_IO_diff, def_VA_g, def_VA_IO_g) %>%     # exchanged FirmType for FirmType2
     filter(Employment > 0) %>% # Size index
     mutate(COMPCAT_num = ifelse((Employment >= 0 & Employment < 50), 1, 
                              ifelse((Employment >= 50 & Employment < 250), 2,
@@ -187,8 +187,8 @@ fun_plot_marginal <- function(pdf_name, title, cond_name, var_name, x_lab, c_nam
 
   dd <- df_cut %>%
     select(ID, Year, COMPCAT, COMPCAT_num, Sector.Short, Province, Province.Code, FirmType2, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_RoC_G_FI, def_FIAS_g,
-           Employment_g)#, Employment_diff, def_VA_g, def_VA_diff, def_VA, def_VA_IO_g) 
-#           Employment_g, Employment_diff, def_VA_g, def_VA_diff, def_VA, def_VA_IO_g) 
+           Employment_g, Employment_diff, def_VA_g, def_VA_diff, def_VA, def_VA_IO_g) 
+#           Employment_g)#, Employment_diff, def_VA_g, def_VA_diff, def_VA, def_VA_IO_g) 
 
   var_ind <- match(var_name, colnames(dd))
   cond_ind <- match(cond_name, colnames(dd))
@@ -281,7 +281,9 @@ fun_plot_marginal(pdf_name = "Figure_noTitle_Country_Year_RoFIAS", title = "", c
 
 fun_plot_marginal(pdf_name = "Figure_noTitle_Country_Year_IR", title = "", cond_name = "Year", var_name = "def_FIAS_g", x_lab = "Investment Rate", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-stop("Manual break; rest of script does not need to be computed again") 
+#stop("Manual break; rest of script does not need to be computed again") 
+
+
 
 fun_plot_marginal(pdf_name = "Figure_Country_Year_LP", title = "Log Density of Labor Productivty by Year", cond_name = "Year", var_name = "def_LP_IO", x_lab = "LP", c_names = Size_p$Year, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 

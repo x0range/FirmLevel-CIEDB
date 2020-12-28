@@ -258,7 +258,7 @@ fun_plot_marginal(pdf_name = "Figure_notitle_2Provinces_2007_RoFIAS", title = ""
 
 fun_plot_marginal(pdf_name = "Figure_notitle_2Provinces_2007_IR", title = "", cond_name = "Province", var_name = "def_FIAS_g", x_lab = "Investment Rate", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 
-stop("Manual break; rest of script does not need to be computed again") 
+#stop("Manual break; rest of script does not need to be computed again") 
 
 
 fun_plot_marginal(pdf_name = "Figure_notitle_2Provinces_2007_LP", title = "Log Density of Labor Productivty by Province", cond_name = "Province", var_name = "def_LP_IO", x_lab = "LP", c_names = pro_name,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)

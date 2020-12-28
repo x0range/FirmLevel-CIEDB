@@ -4,7 +4,8 @@ pacman::p_load(dplyr,RColorBrewer,colorspace,knitr,tidyr,devtools)
 
 setwd("~/eecon/git/Amadeus-Datawork")
 devtools::load_all("fittinglevy")
-setwd("~/datalake/CIEDB_2009_2013/")
+#setwd("~/datalake/CIEDB_2009_2013/")
+setwd("/mnt/usb4/CIEDB_2009_2013_work/")
 
 #load("China_data_set_incl_compounds.Rda")   # loads df
 load("dataframe_including_FirmType2.Rda")   # loads df
@@ -13,10 +14,12 @@ country_names = c("PR China")
 
 names(df)
 
-  df_cut <- df %>% 
+  df_cut <- df %>%
+    ungroup() %>% 
     select(ID, Year, Sector.Short, Province, Province.Code, FirmType2, Employment, Employment_g, def_LP_IO,  def_LP_IO_g, 
            def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_g, def_RoC_G_FI, def_VA, def_VA_IO, def_FIAS_g, 
-           def_TFP_IO_diff, Employment_diff, Employment_g, def_VA_diff, def_VA_IO_diff, def_VA_g, def_VA_IO_g) %>%     # exchanged FirmType for FirmType2
+           def_TFP_IO_diff) %>% #, Employment_diff, Employment_g, def_VA_diff, def_VA_IO_diff, def_VA_g, def_VA_IO_g) %>%     # exchanged FirmType for FirmType2
+#           def_TFP_IO_diff, Employment_diff, Employment_g, def_VA_diff, def_VA_IO_diff, def_VA_g, def_VA_IO_g) %>%     # exchanged FirmType for FirmType2
     filter(Employment > 0) %>% # Size index
     mutate(COMPCAT_num = ifelse((Employment >= 0 & Employment < 50), 1, 
                              ifelse((Employment >= 50 & Employment < 250), 2,
@@ -180,11 +183,12 @@ fun_plot_marginal <- function(pdf_name, title, cond_name, var_name, x_lab, c_nam
   ### LP_change
   
     pdf(paste(pdf_name, ".pdf", sep = ""), height = 4.8, width = 4)
-  par(mfrow=c(1,1), mar=c(3, 2.5, 1, 1), mgp=c(1.5,.3,0), tck=-.01, oma=c(0,0,2,0))
+  par(mfrow=c(1,1), mar=c(3, 2.5, 1, 1), mgp=c(1.5,.3,0), tck=-.01, oma=c(0,0,0,0))
 
   dd <- df_cut %>%
     select(ID, Year, COMPCAT, COMPCAT_num, Sector.Short, Province, Province.Code, FirmType2, def_LP_IO, def_LP_IO_g, def_LP_IO_lr, def_LP_diff, def_LP_IO_diff, def_TFP_IO_diff, def_RoC_G_FI, def_FIAS_g,
-           Employment_g, Employment_diff, def_VA_g, def_VA_diff, def_VA, def_VA_IO_g) 
+           Employment_g)#, Employment_diff, def_VA_g, def_VA_diff, def_VA, def_VA_IO_g) 
+#           Employment_g, Employment_diff, def_VA_g, def_VA_diff, def_VA, def_VA_IO_g) 
 
   var_ind <- match(var_name, colnames(dd))
   cond_ind <- match(cond_name, colnames(dd))
@@ -224,7 +228,11 @@ fun_plot_marginal <- function(pdf_name, title, cond_name, var_name, x_lab, c_nam
 
       color_ind <- rainbow_hcl(length(c_names))
 
-      plot(c(x_min, x_max), c(y_min, y_max), cex = 0,  log = "y", yaxt = "n", xaxt = "n", cex.main = 1.2, xlab = x_lab, ylab = "Log-Density", main = title, cex.main = 0.8)
+      if (title=="") {
+        plot(c(x_min, x_max), c(y_min, y_max), cex = 0,  log = "y", yaxt = "n", xaxt = "n", cex.main = 1.2, xlab = x_lab, ylab = "Log-Density", cex.main = 0.8)
+      } else {
+        plot(c(x_min, x_max), c(y_min, y_max), cex = 0,  log = "y", yaxt = "n", xaxt = "n", cex.main = 1.2, xlab = x_lab, ylab = "Log-Density", main = title, cex.main = 0.8)
+      }
       axis(side = 1, lwd = 0.3, cex.axis=0.9)
       axis(side = 2, lwd = 0.3, cex.axis=.9)
       
@@ -265,6 +273,15 @@ pov_cut <- 0.995
 
 setwd("./Figures/")
 
+fun_plot_marginal(pdf_name = "Figure_noTitle_Country_Year_LP", title = "", cond_name = "Year", var_name = "def_LP_IO", x_lab = "LP", c_names = Size_p$Year, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_noTitle_Country_Year_LP_Diff", title = "", cond_name = "Year", var_name = "def_LP_IO_diff", x_lab = "LP Change", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_noTitle_Country_Year_RoFIAS", title = "", cond_name = "Year", var_name = "def_RoC_G_FI", x_lab = "Profitability (RoFIAS)", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+fun_plot_marginal(pdf_name = "Figure_noTitle_Country_Year_IR", title = "", cond_name = "Year", var_name = "def_FIAS_g", x_lab = "Investment Rate", c_names = Size_p$Year,  neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
+
+stop("Manual break; rest of script does not need to be computed again") 
 
 fun_plot_marginal(pdf_name = "Figure_Country_Year_LP", title = "Log Density of Labor Productivty by Year", cond_name = "Year", var_name = "def_LP_IO", x_lab = "LP", c_names = Size_p$Year, neg_cut = neg_cut, pov_cut = pov_cut, cut_num = 5000)
 

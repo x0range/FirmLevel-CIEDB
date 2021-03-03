@@ -22,14 +22,18 @@ plot_sectoral_dev <- function(df, var, label, filename_infix="", logscale=F, col
   if (!is.na(xlim)) {
     long_df$Year <- as.numeric(as.character(long_df$Year))
   }
-  the_plot <- ggplot(long_df, aes(x=Year, y=value, group=Sector, color=Sector)) + 
+  the_plot <- ggplot(long_df, aes(x=Year, y=value, group=Sector, color=Sector, shape=Sector)) + 
     theme_bw() +
     theme(axis.text = element_text(size=16), axis.title=element_text(size=18)) +
+    geom_point(size=3) +
     geom_line() + 
     ylab(label) +
     scale_colour_discrete(guide = 'none') +
+    scale_shape_manual(guide = 'none', values=c(c(1:20),c(1:50)*0+20)) +
     #scale_x_discrete(expand=c(0, 1)) +
-    geom_dl(aes(label = Sector), method = list(dl.combine("first.points", "last.points"), cex = 1.3)) 
+    #geom_dl(aes(label = Sector), method = list(dl.combine("first.points", "last.points"), cex = 1.3)) 
+    geom_dl(aes(label = Sector), method = list(dl.trans(x = x + 0.2), "last.points", cex = 1.3)) +
+    geom_dl(aes(label = Sector), method = list(dl.trans(x = x - 0.2), "first.points", cex = 1.3)) 
   if (logscale) {
     the_plot <- the_plot +
       scale_y_continuous(trans='log10')
@@ -49,7 +53,7 @@ plot_sectoral_dev <- function(df, var, label, filename_infix="", logscale=F, col
   }
   print(the_plot)
   big = ifelse(length(columns_restriction)>0,"_BG","")
-  ggsave(paste("09", filename_infix, "_Sectoral_Accounts_", big, var, ".pdf",sep=""), plot=the_plot)
+  ggsave(paste("09", filename_infix, "_Sectoral_Accounts_", big, var, ".pdf",sep=""), plot=the_plot, width=10, height=7.5)
 }
 
 
@@ -167,15 +171,15 @@ computations_by_sector_scheme <- function(df, sector_scheme="GB2002") {
   }
   sectoral$Avg_Firm_Age <- sectoral$Avg.Firm_Age
   
-  plot_sectoral_dev(sectoral, "nHHI_TOAS", "HHI", filename_infix=filename_infix, logscale=T, columns_restriction=big_sectors)
-  plot_sectoral_dev(sectoral, "Entropy_TOAS", "Entropy", filename_infix=filename_infix, logscale=F, columns_restriction=big_sectors)
-  plot_sectoral_dev(sectoral, "Employment_share", "Employment share", filename_infix=filename_infix, logscale=F, columns_restriction=big_sectors)
-  plot_sectoral_dev(sectoral, "VA_share", "Value added share", filename_infix=filename_infix, logscale=F, columns_restriction=big_sectors)
-  plot_sectoral_dev(sectoral, "Avg_Firm_Age", "Average firm age", filename_infix=filename_infix, logscale=T, columns_restriction=big_sectors)
-  plot_sectoral_dev(sectoral, "Avg_Firm_Age", "Average firm age", filename_infix=filename_infix, logscale=T)
+  plot_sectoral_dev(sectoral, "nHHI_TOAS", "HHI", filename_infix=filename_infix, logscale=T, columns_restriction=big_sectors, xlim=c(1996.5, 2014.5))
+  plot_sectoral_dev(sectoral, "Entropy_TOAS", "Entropy", filename_infix=filename_infix, logscale=F, columns_restriction=big_sectors, xlim=c(1996.5, 2014.5))
+  plot_sectoral_dev(sectoral, "Employment_share", "Employment share", filename_infix=filename_infix, logscale=F, columns_restriction=big_sectors, xlim=c(1996.5, 2014.5))
+  plot_sectoral_dev(sectoral, "VA_share", "Value added share", filename_infix=filename_infix, logscale=F, columns_restriction=big_sectors, xlim=c(1996.5, 2014.5))
+  plot_sectoral_dev(sectoral, "Avg_Firm_Age", "Average firm age", filename_infix=filename_infix, logscale=T, columns_restriction=big_sectors, xlim=c(1996.5, 2014.5))
+  plot_sectoral_dev(sectoral, "Avg_Firm_Age", "Average firm age", filename_infix=filename_infix, logscale=T, xlim=c(1996.5, 2014.5))
   
-  plot_sectoral_dev(sectoral, "nHHI_TOAS", "HHI", filename_infix=filename_infix, logscale=T)
-  plot_sectoral_dev(sectoral, "Entropy_TOAS", "Entropy", filename_infix=filename_infix, logscale=F)
+  plot_sectoral_dev(sectoral, "nHHI_TOAS", "HHI", filename_infix=filename_infix, logscale=T, xlim=c(1996.5, 2014.5))
+  plot_sectoral_dev(sectoral, "Entropy_TOAS", "Entropy", filename_infix=filename_infix, logscale=F, xlim=c(1996.5, 2014.5))
   
   
   # not executed
@@ -193,7 +197,9 @@ computations_by_sector_scheme <- function(df, sector_scheme="GB2002") {
 
 # main entry point
 
-setwd("~/datalake/CIEDB_2009_2013/")
+#setwd("~/datalake/CIEDB_2009_2013/")
+setwd("/mnt/usbdisk/CIEDB_Fabricants_Law_work_2021/CIEDB_2021/")
+
 load(file="08_data_complete_panels_annualized.Rda", verbose=T)  # df
 
 computations_by_sector_scheme(df, sector_scheme="GB2002")
@@ -204,9 +210,9 @@ load("08_macro_data.Rda", verbose=T)  # df, sector_description
 df$Sector.Short <- df$code
 big_ISIC_MACRO = c("A01", "B", "C10-C12", "C13-C15", "C20", "C24", "C26", "C28", "D35", "F", "G46", "H49", "K64", "L68", "O84", "P85")
 big_ISIC_CIEDB = c("B", "C10-C12", "C13-C15", "C20", "C22", "C23", "C24", "C25", "C28", "C29", "C30", "D35")
-plot_sectoral_dev(df, "Employment_share", "Employment share", filename_infix="MACRO", logscale=T, columns_restriction=big_ISIC_MACRO, xlim=c(1999, 2015))
+plot_sectoral_dev(df, "Employment_share", "Employment share", filename_infix="MACRO", logscale=T, columns_restriction=big_ISIC_MACRO, xlim=c(1998.5, 2015.5))
 plot_sectoral_dev(df, "Employment_share", "Employment share", filename_infix="MACRO_IND", logscale=F, columns_restriction=big_ISIC_CIEDB)
-plot_sectoral_dev(df, "VA_share", "Value added share", filename_infix="MACRO", logscale=T, columns_restriction=big_ISIC_MACRO, xlim=c(1999, 2015))
+plot_sectoral_dev(df, "VA_share", "Value added share", filename_infix="MACRO", logscale=T, columns_restriction=big_ISIC_MACRO, xlim=c(1998.5, 2015.5))
 plot_sectoral_dev(df, "VA_share", "Value added share", filename_infix="MACRO_IND", logscale=F, columns_restriction=big_ISIC_CIEDB)
 
 df_holz <- read.csv2("Holz_appendix_6_table_revision_2004.csv", sep=",", stringsAsFactors=F)
@@ -238,5 +244,5 @@ df_VA_longtime <- rbind(df_holz_short, df_VA)
 colnames(df_VA_longtime) <- c("Year", "Primary", "Industry", "Construction", "Trade/Cater.", "Comm./Transp.", "Misc. Services")
 df_VA_longtime_long <- melt(df_VA_longtime)
 colnames(df_VA_longtime_long) <- c("Year", "Sector.Short", "VA_share")
-plot_sectoral_dev(df_VA_longtime_long, "VA_share", "Value added share", filename_infix="LONGTERM", logscale=F, xlim=c(1942, 2025), 
+plot_sectoral_dev(df_VA_longtime_long, "VA_share", "Value added share", filename_infix="LONGTERM", logscale=F, xlim=c(1940.1, 2026), 
                   breaks=c(1950, 1965, 1980, 1995, 2010), shaded=c(1998, 2014))

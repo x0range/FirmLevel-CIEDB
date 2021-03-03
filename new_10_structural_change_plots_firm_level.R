@@ -52,10 +52,13 @@ plot_time_dev <- function(df_a, df_b, var1, var2, plot_file_name="plot.pdf", col
                   "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", 
                   "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000")
   
+  the_shapes <- c(c(1:20),c(1:50)*0+20)
+
   the_colors <- sort(the_colors[1:length(plot_columns)])
-  
-  color_df <- data.frame(Sectors=the_colors, the_labels=legend_labels)
-  
+  the_shapes <- sort(the_shapes[1:length(plot_columns)])
+
+  color_df <- data.frame(Sectors=the_colors, the_labels=legend_labels, the_shapes=the_shapes)
+    
   the_plot <- ggplot() + 
     labs(x=var1, y=var2) +
     theme_bw() +
@@ -65,7 +68,13 @@ plot_time_dev <- function(df_a, df_b, var1, var2, plot_file_name="plot.pdf", col
   if (show_legend) {
     the_plot <- the_plot + 
       geom_point(data = color_df, aes(x = c(hiddenpoint[[1]]), y = c(hiddenpoint[[2]]), color = Sectors)) + 
-      scale_color_identity(name=legend_name, guide = 'legend', labels = color_df$the_labels)
+      guides(color = guide_legend(override.aes = list(shape = color_df$the_shapes, size=3))) +
+      scale_color_identity(name=legend_name, guide = 'legend', labels = color_df$the_labels) +
+      guides(shape = guide_legend(override.aes = 
+                                list(size = 5, shape=c(22,24), 
+                                     colour="black", 
+                                     fill=c('lightskyblue1', 'lightpink')))) #+
+      #guides(shape = guide_legend(override.aes = list(shape = color_df$the_shapes)))
   }
   
   #print(df_a)
@@ -76,7 +85,7 @@ plot_time_dev <- function(df_a, df_b, var1, var2, plot_file_name="plot.pdf", col
     plot_data$Year = rownames(df_a)         # would be the same as rownames(df_b)
     #print(plot_data)
     the_plot <- eval(the_plot +
-                       geom_point(data=plot_data, aes(x=get(var1), y=get(var2)), color=the_colors[[i]]) +
+                       geom_point(data=plot_data, aes(x=get(var1), y=get(var2)), color=the_colors[[i]], shape=the_shapes[[i]], size=3) +
                        geom_text_repel(data=plot_data, aes(x=get(var1), y=get(var2), label=Year)) +
                        geom_segment(data=plot_data, aes(x=get(var1),
                                                         y=get(var2),
@@ -95,13 +104,14 @@ plot_time_dev <- function(df_a, df_b, var1, var2, plot_file_name="plot.pdf", col
       ylim(ylim[[1]], ylim[[2]])
   }
   print(the_plot)
-  ggsave(plot_file_name, plot=the_plot)
+  ggsave(plot_file_name, plot=the_plot, width=10, height=8)
 }
 
 
 # main entry point
 
-setwd("~/datalake/CIEDB_2009_2013/")
+#setwd("~/datalake/CIEDB_2009_2013/")
+setwd("/mnt/usbdisk/CIEDB_Fabricants_Law_work_2021/CIEDB_2021/")
 
 # relevant sector lists
 big_ISIC_CIEDB = c("B", "C10-C12", "C13-C15", "C20", "C22", "C23", "C24", "C25", "C28", "C29", "C30", "D35")

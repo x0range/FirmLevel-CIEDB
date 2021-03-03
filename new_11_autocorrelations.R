@@ -65,8 +65,8 @@ plot_ac <- function(plot_df, ylabel, the_filename, plot_layout=NA) {
 plot_macro_dispersion <- function(plot_df, ylabel, the_filename) {
   plot_df_long <- melt(plot_df, index.vars="Year")
   colnames(plot_df_long) <- c("Year", "Variable", "var")
-  the_plot <- ggplot(data=plot_df_long, aes(x=Year, y=var, group=Variable, colour=Variable)) + 
-    geom_point() +
+  the_plot <- ggplot(data=plot_df_long, aes(x=Year, y=var, group=Variable, colour=Variable, shape=Variable)) + 
+    geom_point(data=plot_df_long, aes(colour=Variable, shape=Variable), size=3) +
     geom_line() +
     xlab("Year") +
     ylab(ylabel) +
@@ -74,7 +74,7 @@ plot_macro_dispersion <- function(plot_df, ylabel, the_filename) {
     theme(axis.text = element_text(size=12), axis.title=element_text(size=14),
           legend.title=element_text(size=14), legend.text=element_text(size=12)) 
   print(the_plot)
-  ggsave(the_filename, the_plot)
+  ggsave(the_filename, the_plot, width=10, height=8)
 }
 
 get_ac <- function(df_long, year_col="Year", idx_col="index", var_col="var", ylabel="Autocorrelation", the_filename="plot.pdf", plot_layout=NA) {
@@ -154,6 +154,8 @@ get_ac_from_wide <- function(df_wide, ylabel="Autocorrelation", the_filename="pl
 # main entry point
 
 setwd("~/datalake/CIEDB_2009_2013/")
+#setwd("/mnt/usbdisk/CIEDB_Fabricants_Law_work_2021/CIEDB_2021/")
+
 #load(file="data_short_consistent.Rda", verbose=T)
 
 load("09_sectoral_change.Rda", verbose=T) # df_E_g, df_VA_g, df_LP_diff, df_LP_IO_diff, df_FA_g, df_E_s, df_VA_s
